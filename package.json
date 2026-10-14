@@ -4,38 +4,41 @@
     "url": "https://github.com/felddy/foundryvtt-docker/issues"
   },
   "dependencies": {
-    "cheerio": "^1.2.0",
-    "docopt": "^0.6.2",
     "fetch-cookie": "^3.2.0",
-    "node-fetch": "^3.3.2",
-    "proxy-agent": "^8.0.2",
-    "tough-cookie-file-store": "^3.3.0",
-    "winston": "^3.19.0"
+    "tough-cookie": "^6.0.0"
   },
   "description": "Utilities to help boot a FoundryVTT server.",
   "devDependencies": {
-    "@types/docopt": "^0.6.37",
-    "@types/node": "^26.6.2",
-    "@types/tough-cookie": "^4.0.5",
-    "@types/tough-cookie-file-store": "^2.0.4",
+    "@types/bun": "^1.3.0",
+    "prettier": "^3.6.2",
     "typescript": "^7.0.2"
   },
   "homepage": "https://github.com/felddy/foundryvtt-docker#readme",
   "keywords": [
+    "bun",
     "docker",
     "foundryvtt"
   ],
   "license": "MIT",
-  "main": "authenticate.js",
   "name": "foundryvtt-utils",
+  "packageManager": "bun@1.4.3",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/felddy/foundryvtt-docker.git"
   },
   "scripts": {
-    "build": "npx tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "bun tools/build.ts",
+    "bump-version": "bun tools/bump_version.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "bun run typecheck && bun run format:check",
+    "setup": "bun tools/setup_env.ts",
+    "tag": "bun tools/tag.ts",
+    "test": "bun test tests/unit",
+    "test:container": "bun test --timeout 600000 tests/container",
+    "typecheck": "tsc --noEmit"
   },
   "type": "module",
-  "version": "2.0.0"
+  "version": "3.0.0"
 }

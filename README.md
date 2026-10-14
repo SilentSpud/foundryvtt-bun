@@ -15,7 +15,7 @@
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 [![FoundryVTT Release Version: v14.368](https://img.shields.io/badge/release-v14.368-brightgreen?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAIRlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAA6gAwAEAAAAAQAAAA4AAAAATspU+QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAAAiFJREFUKBVVks1rE1EUxc+d5tO0prZVSZsUhSBIPyC02ooWurJ0I7rQlRvdC/4N4h9gt7pyoRTswpWgILgQBIOIiC340VhbpC0Ek85MGmPmXc+baWpNGJg77/7uOffeB+z9FHB0FrH9eLwwqpOF0f34KrpsTicW+6L8KE8QhO/n8n1IOgtQHYZA+a/Ai9+Wd6v1g7liq5A2OjKSQNa9hkO4hAzOIylf6CHALk6hoWXsylPkfjyyApaJhVCxmERy5zLSuI7D8h1H5BWht1aBhS6wdI3pN7GabyuyS4JPrchzujmNjDxAVrrRL2PoxRSGxOfjssgEjkkJvVJBWu6h5M7YenvDoOO0OgicD4TPIKWbBG6xvwTaKCMwSU7hKxK6gt8mbsFIMaF5iDyjUg6iPnqc58higCr9fD4iTvWMziAmK2g73f/AADVWX0YXrlChirgOcqL3WXYBYpTfUuxzjkW30dI1C0ZW1RnjMopo4C56MIs6CgQrMER2cJoz9zjdO2iz17g2yZUjqzHWbuA4/ugiEz7DVRe/aLxmcvDQ5Cq+oWGWeDbAgiETXgArrVOFGzR0EkclxrVMcpfLgFThY5roe2yz95ZZkzcbj22+w2VG8Pz6Q/b5Gr6uM9mw04uo6ll4tOlhE8a8xNzGYihCJoT+u3I4kUIp6OM0X9CHHds8frbqsrXlh9CB62nj8L5a9Y4DHR/K68TgcHhoz607Qp34L72X0rdSdM+vAAAAAElFTkSuQmCC)](https://foundryvtt.com/releases/14.368)
-[![Platforms](https://img.shields.io/badge/platforms-amd64%20%7C%20arm64%20%7C%20ppc64le%20%7C%20s390x-blue)](https://github.com/felddy/foundryvtt-docker/pkgs/container/foundryvtt)
+[![Platforms](https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-blue)](https://github.com/felddy/foundryvtt-docker/pkgs/container/foundryvtt)
 
 You can get a [Foundry Virtual Tabletop](https://foundryvtt.com) instance up and
 running in minutes using this container.  This image is designed to be secure,
@@ -198,8 +198,8 @@ own behavior applies.
 | ---- | ------- | ------- |
 | `CONTAINER_CACHE` | Set a path to cache downloads of the Foundry distribution archive and speed up subsequent container startups.  The path should be in `/data` or another persistent mount point in the container.  Set to `""` to disable.  The cache may be shared by multiple containers: simultaneous startups coordinate among themselves so each release is downloaded only once.</br>***Note***: When the cache is disabled the container will sleep indefinitely on failure rather than exiting, to prevent a restart loop.  A distribution can be pre-downloaded and placed into a cache directory.  The distribution's name must be of the form: `foundryvtt-14.368.zip`, and its contents must match the version in its name — mislabeled archives are rejected and removed. | `/data/container_cache` |
 | `CONTAINER_CACHE_SIZE` | Set the maximum number of distribution archives to keep in the cache.  The minimum is `1`.  When the limit is exceeded, the least recently *used* archives are removed first — an archive counts as used each time a container installs from it, so a shared cache retains whatever its instances actually run, regardless of version numbers.  Unset to disable cache size management and keep all versions. | |
-| `CONTAINER_PATCHES` | Set a path to a directory of shell scripts to be sourced after Foundry is installed but before it is started.  The path should be in `/data` or another persistent mount point in the container. e.g.; `/data/container_patches`  Patch files are sourced in lexicographic order.  `CONTAINER_PATCHES` are processed after `CONTAINER_PATCH_URLS`. | |
-| `CONTAINER_PATCH_URLS` | Set to a space-delimited list of URLs to be sourced after Foundry is installed but before it is started.  Patch URLs are sourced in the order specified.  `CONTAINER_PATCH_URLS` are processed before `CONTAINER_PATCHES`.  ⚠️ **Only use patch URLs from trusted sources!** | |
+| `CONTAINER_PATCHES` | Set a path to a directory of shell scripts to be run with `bash` after Foundry is installed but before it is started.  The path should be in `/data` or another persistent mount point in the container. e.g.; `/data/container_patches`  Patch files are run in lexicographic order, with `errexit`, `nounset`, and `pipefail` set and the `log`, `log_debug`, `log_warn`, and `log_error` helpers available.  A failing patch stops the container.  `CONTAINER_PATCHES` are processed after `CONTAINER_PATCH_URLS`. | |
+| `CONTAINER_PATCH_URLS` | Set to a space-delimited list of URLs of shell scripts to be run with `bash` after Foundry is installed but before it is started, in the same way as `CONTAINER_PATCHES`.  Patch URLs are run in the order specified.  `CONTAINER_PATCH_URLS` are processed before `CONTAINER_PATCHES`.  ⚠️ **Only use patch URLs from trusted sources!** | |
 | `CONTAINER_PRESERVE_CONFIG` | Normally new `options.json` and `admin.txt` files are generated by the container at each startup.  Setting this to `true` prevents the container from modifying these files when they exist.  If they do not exist, they will be created as normal. | `false` |
 | `CONTAINER_UMASK` | Control the default permissions on new files and directories created by Foundry VTT. Set the umask to `"0002"` if you need new files to be writable by other users in the same group as the foundry user. If this is empty or not set, the umask will not be changed (the system default is `"0022"`). | |
 | `CONTAINER_URL_FETCH_RETRY` | Number of times to retry fetching the presigned URL using exponential back off.  This behavior is useful in continuous integration environments where multiple parallel workflows can exceed the rate-limit of the URL generation service. | `0` |
@@ -237,7 +237,7 @@ own behavior applies.
 | `FOUNDRY_VERSION` | Version of Foundry Virtual Tabletop to install. | `14.368` |
 | `FOUNDRY_WORLD` | The directory name of the world to launch at system start. | |
 | `TZ` | Container [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List) | `UTC` |
-| `*_PROXY` | Proxy settings to use during container initialization and by Foundry at runtime.  See [proxy-from-env](https://www.npmjs.com/package/proxy-from-env#environment-variables) for the list of supported environment variable names.  See [proxy-agent](https://www.npmjs.com/package/proxy-agent) for list of supported proxy protocols. | |
+| `*_PROXY` | Proxy settings to use during container initialization and by Foundry at runtime.  The container's own requests honor `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` (and their lowercase forms) with `http://` and `https://` proxy URLs.  All `*_PROXY` variables are passed through to Foundry. | |
 
 ### Node.js variables ###
 
@@ -282,10 +282,6 @@ The CLI stores its configuration in `$XDG_DATA_HOME/.fvttrc.yml`, which
 defaults to `/data/.local/share/.fvttrc.yml` in this image so that the
 configuration persists in the data volume and remains writable for any UID the
 container runs as.  Set `XDG_DATA_HOME` to change the location.
-
-> [!NOTE]
-> The CLI is included on every image platform except `s390x`, where its native
-> LevelDB dependency cannot be built.
 
 ## Building ##
 

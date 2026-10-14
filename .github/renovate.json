@@ -65,19 +65,6 @@
       ],
       "matchDatasources": [
         "custom.foundryvtt"
-      ],
-      "postUpgradeTasks": {
-        "commands": [
-          "sh render-docs-update"
-        ],
-        "executionMode": "branch",
-        "fileFilters": [
-          "README.md",
-          "docs/**"
-        ]
-      },
-      "prBodyNotes": [
-        "The rendered documentation (`README.md` and `docs/**`) was regenerated from its templates as part of this update."
       ]
     }
   ]

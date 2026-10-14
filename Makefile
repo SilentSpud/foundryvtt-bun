@@ -11,27 +11,27 @@ IMAGE := ghcr.io/felddy/foundryvtt
 REPO := felddy/foundryvtt-docker
 RULESET_DIR := .github/rulesets
 
-.PHONY: guard-version guard-gh guard-jq build test version github-output help release apply-ruleset export-ruleset docs docs-check
+.PHONY: guard-version guard-gh guard-jq build test unit-test lint version github-output help release apply-ruleset export-ruleset
 
 ## guard-version: fail loudly if the version source is missing or empty.
 guard-version:
 	@test -n "$(CONTAINER_VERSION)" || { echo "ERROR: src/version.txt missing or empty" >&2; exit 1; }
 
-## docs: render the README and every document under docs/ from its template.
-docs: guard-version
-	uv run --group dev python tools/render_docs.py --all $(CONTAINER_VERSION)
-
-## docs-check: verify every rendered document is in sync with its template.
-docs-check: guard-version
-	uv run --group dev python tools/render_docs.py --check $(CONTAINER_VERSION)
-
 ## build: build the container image tagged with the CONTAINER_VERSION.
 build: guard-version
 	docker buildx build --build-arg CONTAINER_VERSION=$(CONTAINER_VERSION) --build-arg FOUNDRY_VERSION=$(FOUNDRY_VERSION) --load --tag $(IMAGE):$(CONTAINER_VERSION) .
 
-## test: run the test suite against the built container image.
+## unit-test: run the unit tests (no container image needed).
+unit-test:
+	bun test tests/unit
+
+## lint: type-check and check formatting.
+lint:
+	bun run lint
+
+## test: run the container tests against the built container image.
 test: guard-version
-	uv run --group dev pytest tests/ --image-tag $(IMAGE):$(CONTAINER_VERSION)
+	IMAGE_TAG=$(IMAGE):$(CONTAINER_VERSION) bun run test:container
 
 ## version: print the derived CONTAINER_VERSION and FOUNDRY_VERSION.
 version: guard-version
@@ -87,19 +87,16 @@ help:
 	@echo "Available targets:"
 	@echo "  apply-ruleset  Create/update the branch and tag protection rulesets (resolved by name)."
 	@echo "  build          Build the container image tagged with the CONTAINER_VERSION."
-	@echo "  docs           Render the README and all docs/ from their templates."
-	@echo "  docs-check     Verify every rendered document is in sync with its template."
 	@echo "  export-ruleset Overwrite the ruleset JSON files from the live rulesets."
 	@echo "  github-output  Print key=value lines for CI."
 	@echo "  help           Show this help message."
-	@echo "  release        Bump VERSION, re-render docs, and commit (make release VERSION=x.y.z)."
-	@echo "  test           Run the test suite (uv run pytest tests/)."
+	@echo "  release        Bump VERSION and commit (make release VERSION=x.y.z)."
+	@echo "  lint           Type-check and check formatting."
+	@echo "  test           Run the container tests against the built image."
+	@echo "  unit-test      Run the unit tests."
 	@echo "  version        Print the derived CONTAINER_VERSION and FOUNDRY_VERSION."
 
-## release: bump the version, re-render docs, and commit the result.
+## release: bump the version and commit the result.
 release: guard-version
 	@test -n "$(VERSION)" || { echo "ERROR: VERSION is required (make release VERSION=x.y.z)" >&2; exit 1; }
-	./bump-version set $(VERSION)
-	$(MAKE) docs
-	git add README.md docs
-	git commit --message "Render docs for $(VERSION)"
+	bun tools/bump_version.ts set $(VERSION)

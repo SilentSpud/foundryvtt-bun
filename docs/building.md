@@ -19,8 +19,11 @@ docker build \
 
 ## Cross-platform builds ##
 
-To build images for other CPU architectures, use Docker's
-[`buildx`](https://docs.docker.com/buildx/working-with-buildx/) feature:
+The image supports the `linux/amd64` and `linux/arm64` platforms, the
+architectures for which [Bun](https://bun.sh), which runs the container's
+utilities, is published.  To build for a platform other than your own, use
+Docker's [`buildx`](https://docs.docker.com/buildx/working-with-buildx/)
+feature:
 
 1. Clone the project:
 

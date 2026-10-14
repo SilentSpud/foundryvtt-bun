@@ -1,9 +1,7 @@
 .git
 .github
-.mypy_cache
-.pytest_cache
-.python-version
 assets
 data
-patches
+dist
+node_modules
 tests

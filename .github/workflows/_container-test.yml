@@ -1,0 +1,134 @@
+---
+name: Test container image
+
+# Tests a container image by pulling it from the registry using the digest
+# reference resolved from the per-platform digest artifacts uploaded by the
+# container-build workflow, so the tested image is identical to what will be
+# published.  The tests are written in TypeScript and run with `bun test`.
+
+permissions: {}
+
+on: # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      image-name:
+        description: Container image name without registry (e.g. owner/image)
+        required: true
+        type: string
+      platforms:
+        description: JSON array of platforms to test (e.g. '["linux/amd64"]')
+        required: true
+        type: string
+      registry:
+        description: Container registry hostname
+        required: false
+        type: string
+        default: ghcr.io
+      retention-days:
+        description: Days to retain the test results artifact
+        required: false
+        type: number
+        default: 7
+    secrets:
+      registry-token:
+        description: >
+          Token for pulling from the registry. Defaults to GITHUB_TOKEN.
+        required: false
+      foundry-username:
+        description: foundryvtt.com username for the real-release test
+        required: false
+      foundry-password:
+        description: foundryvtt.com password for the real-release test
+        required: false
+
+defaults:
+  run:
+    shell: bash -Eueo pipefail -x {0}
+
+jobs:
+  test:
+    name: Test ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(inputs.platforms) }}
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # tag=v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Log in to registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # tag=v4.1.0
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.registry-token && github.repository_owner || github.actor }}
+          password: ${{ secrets.registry-token || secrets.GITHUB_TOKEN }}
+
+      # gh run download --name accepts exact artifact names, which keeps
+      # sibling images with a shared slug prefix from matching.
+      - name: Resolve image reference and pull
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_NAME: ${{ inputs.image-name }}
+          PLATFORM: ${{ matrix.platform }}
+          REGISTRY: ${{ inputs.registry }}
+        run: |
+          IMAGE_SLUG=$(echo "${IMAGE_NAME}" | tr '/' '-')
+          PLATFORM_SLUG=$(echo "${PLATFORM}" | tr '/' '-')
+          ARTIFACT_NAME="digests-${IMAGE_SLUG}-${PLATFORM_SLUG}"
+          ARTIFACT_DIR="/tmp/digests/${ARTIFACT_NAME}"
+          mkdir -p /tmp/digests
+          gh run download "${{ github.run_id }}" \
+            --repo "${{ github.repository }}" \
+            --name "${ARTIFACT_NAME}" \
+            --dir "${ARTIFACT_DIR}"
+          HEX=$(ls "${ARTIFACT_DIR}" | grep -E '^[a-f0-9]{64}$' || true)
+          if [[ -z "${HEX}" || $(echo "${HEX}" | wc -l) -ne 1 ]]; then
+            echo "::error::Expected exactly one sha256 digest file in ${ARTIFACT_DIR}: ${HEX}"
+            exit 1
+          fi
+          IMAGE_REF="${REGISTRY}/${IMAGE_NAME}@sha256:${HEX}"
+          docker pull "${IMAGE_REF}"
+          echo "IMAGE_TAG=${IMAGE_REF}" >> "$GITHUB_ENV"
+          echo "image-slug=${IMAGE_SLUG}" >> "$GITHUB_OUTPUT"
+          echo "platform-slug=${PLATFORM_SLUG}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # tag=v2.2.0
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run container tests
+        env:
+          FOUNDRY_PASSWORD: ${{ secrets.foundry-password }}
+          FOUNDRY_USERNAME: ${{ secrets.foundry-username }}
+        run: >-
+          bun test --timeout 900000
+          --reporter=junit --reporter-outfile=test-results.xml
+          tests/container 2>&1 | tee test.log
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # tag=v7.0.1
+        with:
+          name: >-
+            test-results-${{ steps.resolve.outputs.image-slug
+            }}-${{ steps.resolve.outputs.platform-slug }}-${{ github.run_id }}
+          path: |
+            test-results.xml
+            test.log
+          retention-days: ${{ inputs.retention-days }}
+          if-no-files-found: ignore

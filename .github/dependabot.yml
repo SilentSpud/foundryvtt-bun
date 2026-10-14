@@ -49,44 +49,16 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /
     schedule:
       interval: daily
     labels:
       - "bot :robot:"
       - "dependencies :game_die:"
-      - "javascript :coffee:"
+      - "typescript :blue_book:"
     groups:
-      npm-all:
-        applies-to: version-updates
-        patterns:
-          - "*"
-
-  - package-ecosystem: pip
-    directory: /
-    schedule:
-      interval: daily
-    labels:
-      - "bot :robot:"
-      - "dependencies :game_die:"
-      - "python :snake:"
-    groups:
-      pip-all:
-        applies-to: version-updates
-        patterns:
-          - "*"
-
-  - package-ecosystem: uv
-    directory: /
-    schedule:
-      interval: daily
-    labels:
-      - "bot :robot:"
-      - "dependencies :game_die:"
-      - "python :snake:"
-    groups:
-      uv-all:
+      bun-all:
         applies-to: version-updates
         patterns:
           - "*"

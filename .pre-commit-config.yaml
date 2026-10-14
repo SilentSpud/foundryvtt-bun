@@ -5,10 +5,6 @@ ci:
   # Autoupdate hooks weekly (this is the default).
   autoupdate_schedule: weekly
 
-default_language_version:
-  # force all unspecified python hooks to run python3
-  python: python3
-
 repos:
   # Check the pre-commit configuration
   - repo: meta
@@ -21,13 +17,14 @@ repos:
       - id: check-case-conflict
       - id: check-executables-have-shebangs
       - id: check-json
+        # bun.lock is JSONC (trailing commas)
+        exclude: ^bun\.lock$
       - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
       - id: check-symlinks
       - id: check-toml
       - id: check-vcs-permalinks
       - id: check-xml
-      - id: debug-statements
       - id: destroyed-symlinks
       - id: detect-aws-credentials
         args:
@@ -38,10 +35,9 @@ repos:
         args:
           - --fix=lf
       - id: pretty-format-json
-        exclude: ^(package-lock\.json|\.vscode/settings\.json|.*/Pipfile\.lock)$
+        exclude: ^(bun\.lock|\.vscode/settings\.json)$
         args:
           - --autofix
-      - id: requirements-txt-fixer
       - id: trailing-whitespace
 
   # Text file hooks
@@ -51,15 +47,16 @@ repos:
       - id: markdownlint
         args:
           - --config=.mdl_config.yaml
-  - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.8.1
+  # Prettier runs from the project dependencies so the hook and
+  # `bun run format` always agree on the version.
+  - repo: local
     hooks:
       - id: prettier
-        # This is the latest version of v3 available from NPM. The pre-commit
-        # mirror does not pull tags for old major versions once a new major
-        # version tag is published.
-        additional_dependencies:
-          - prettier@3.3.1
+        name: prettier
+        language: system
+        entry: bun x prettier --write --ignore-unknown
+        types:
+          - text
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.38.0
     hooks:
@@ -135,77 +132,14 @@ repos:
         args:
           - -x
 
-  # Python hooks
-  # Run bandit on the "tests" tree with a configuration
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.9.4
-    hooks:
-      - id: bandit
-        name: bandit (tests tree)
-        files: tests
-        args:
-          - --config=.bandit.yml
-  # Run bandit on everything except the "tests" tree
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.9.4
-    hooks:
-      - id: bandit
-        name: bandit (everything else)
-        exclude: tests
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.3.1
-    hooks:
-      - id: black
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - dlint==0.16.0
-          - flake8-bugbear==25.11.29
-          - flake8-comprehensions==3.17.0
-          - flake8-docstrings==1.7.0
-          - flake8-noqa==1.5.0
-          - pep8-naming==0.15.1
-  - repo: https://github.com/PyCQA/isort
-    rev: 8.0.1
-    hooks:
-      - id: isort
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.1
-    hooks:
-      - id: mypy
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
-    hooks:
-      - id: pyupgrade
-        args:
-          # Python 3.10 is currently the oldest non-EOL version of
-          # Python, so we want to apply all rules that apply to this
-          # version or later.  See here for more details:
-          # https://www.gyford.com/phil/writing/2025/08/26/how-to-use-pyupgrade/
-          - --py310-plus
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.11.3
-    hooks:
-      - id: uv-lock
+  # TypeScript hooks
   - repo: local
     hooks:
-      - id: uv-audit
-        name: uv-audit
+      - id: typecheck
+        name: typecheck
         language: system
-        entry: uv audit --preview-features audit
-        files: ^uv.lock$
-        pass_filenames: false
-
-  # Render-consistency hooks
-  - repo: local
-    hooks:
-      - id: render-docs-check
-        name: render-docs-check
-        language: system
-        entry: ./render-docs-check
-        files: ^(.*\.j2|docs/.*|README\.md|src/version\.txt)$
+        entry: bun run typecheck
+        files: (\.ts|^tsconfig\.json|^package\.json)$
         pass_filenames: false
 
   # Terraform hooks

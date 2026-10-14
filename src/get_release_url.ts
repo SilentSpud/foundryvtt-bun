@@ -1,13 +1,14 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
-const doc = `
+import { parseCli, runCli, COMMON_OPTIONS_HELP } from "./cli.ts";
+import { FoundrySession } from "./foundry_site.ts";
+import { parseNonNegativeInt } from "./util.ts";
+
+const USAGE = `
 Generate a Foundry Virtual Tabletop presigned release URL using cookies from
-authenticate.js.
-
-The utility will print the release URL to standard out.
+authenticate.js.  The release URL is printed to standard out.
 
 EXIT STATUS
-    This utility exits with one of the following values:
     0   Completed successfully.
     >0  An error occurred.
 
@@ -15,200 +16,30 @@ Usage:
   get_release_url.js [options] <cookiejar> <version>
   get_release_url.js (-h | --help)
 
-Options:
-  -h --help              Show this message.
-  --log-level=LEVEL      If specified, then the log level will be set to
-                         the specified value.  Valid values are "debug", "info",
-                         "warn", and "error". [default: info]
-  --user-agent=USERAGENT If specified, then the user-agent header will be set to
-                         the specified value. [default: node-fetch]
-  --retry=COUNT          If specified, then the number of retries that will be
-                         attempted before giving up. [default: 0]
+Options:${COMMON_OPTIONS_HELP}
+  --retry=COUNT           The number of retries that will be attempted before
+                          giving up. [default: 0]
 `;
 
-// Imports
-import { CookieJar } from "tough-cookie";
-import { ProxyAgent } from "proxy-agent";
-import FileCookieStore from "tough-cookie-file-store";
-import createLogger from "./logging.js";
-import docopt from "docopt";
-import fetchCookie from "fetch-cookie";
-import nodeFetch, { Headers, Response } from "node-fetch";
-import process from "process";
-import winston from "winston";
+const { values, positionals, logger, userAgent } = parseCli(
+    USAGE,
+    "ReleaseURL",
+    2,
+    {
+        retry: { type: "string", default: "0" },
+    },
+);
+const [cookiejar, version] = positionals as [string, string];
 
-// Setup globals, to be configured in main()
-var cookieJar: CookieJar;
-var fetch: typeof nodeFetch;
-var logger: winston.Logger;
-
-// Constants
-const AGENT = new ProxyAgent();
-const BASE_URL = "https://foundryvtt.com";
-
-const HEADERS: Headers = new Headers({
-    DNT: "1",
-    Referer: BASE_URL,
-    "Upgrade-Insecure-Requests": "1",
-    "User-Agent": "node-fetch",
-});
-
-const INITIAL_RETRY_DELAY_S = 120; // 2 minutes
-
-/**
- * ReleaseResponse - JSON response from the release URL endpoint.
- */
-interface ReleaseResponse {
-    url: string;
-    lifetime: number;
-}
-
-/**
- * sleepWithProgress - Exponential sleep back off based on attempt number.
- * Logs a messages during sleep to indicate progress.
- * @param  {number} attempt Attempt number.
- */
-async function sleepWithProgress(attempt: number): Promise<void> {
-    const delay: number = Math.ceil(
-        INITIAL_RETRY_DELAY_S * 2 ** (attempt - 1) +
-            Math.random() * INITIAL_RETRY_DELAY_S,
-    );
-    logger.info(`Sleeping for ${delay} seconds before retrying...`);
-    // Calculate the end of the sleep period
-    const end = Date.now() + delay * 1000;
-    // Sleep in increments, logging time remaining
-    while (Date.now() < end) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        var time_remaining = Math.ceil((end - Date.now()) / 1000);
-        if (time_remaining % 10 == 0 || time_remaining < 10) {
-            logger.info(`${time_remaining} seconds remaining...`);
-        }
-    }
-}
-
-/**
- * fetchReleaseURL - Fetch the presigned URL.
- *
- * @param  {string} build Build to download.
- * @param  {number} retries Number of retries to attempt.
- * @return {string} The URL of the requested build.
- */
-async function fetchReleaseURL(
-    build: string,
-    retries: number,
-): Promise<string | null> {
-    logger.info(`Fetching presigned release URL for build ${build}...`);
-    const release_url: string = `${BASE_URL}/releases/download?build=${build}&platform=node&response_type=json`;
-    for (let attempt = 1; attempt <= 1 + retries; attempt++) {
-        // If this is not the first attempt, wait a bit before trying again.
-        if (attempt > 1) {
-            await sleepWithProgress(attempt);
-        }
-        logger.debug(`Attempt ${attempt} of ${1 + retries}`);
-        logger.debug(`Fetching: ${release_url}`);
-        const response: Response = await fetch(release_url, {
-            agent: AGENT,
-            headers: HEADERS,
-            method: "GET",
-        });
-        // Check for a successful 200 response
-        if (response.status !== 200) {
-            logger.warn(
-                `Unexpected response ${response.status}: ${response.statusText}`,
-            );
-            continue;
-        }
-
-        const jsonData = (await response.json()) as ReleaseResponse;
-        const presigned_url: string | null = jsonData.url;
-        logger.debug(`Presigned URL: ${presigned_url}`);
-
-        return presigned_url;
-    }
-    throw new Error(`Failed to fetch release URL.`);
-}
-
-/**
- * main - Parse command line args, setup logging, do work.
- *
- * @return {number}  exit code
- */
-async function main(): Promise<number> {
-    // Parse command line options.
-    const options = docopt.docopt(doc, { version: "2.0.0" });
-
-    // Extract values from CLI options.
-    const cookiejar_filename: string = options["<cookiejar>"];
-    const foundry_version: string = options["<version>"];
-    const log_level: string = options["--log-level"].toLowerCase();
-    const retry_option: string = options["--retry"];
-    HEADERS.set("User-Agent", options["--user-agent"]);
-
-    // Setup logging.
-    logger = createLogger("ReleaseURL", log_level);
-
-    // Validate the whole argument: parseInt would accept prefixes such as
-    // "1abc", "1.5", or "1e2" (NaN would run the fetch loop zero times with
-    // a misleading error), and a huge digit string parses to Infinity,
-    // which would make the loop unbounded.
-    const retries: number = parseInt(retry_option, 10);
-    if (!/^\d+$/.test(retry_option) || !Number.isSafeInteger(retries)) {
-        logger.error(
-            `--retry must be a non-negative safe integer.  Found: ${retry_option}`,
-        );
-        return -1;
-    }
-
-    // Setup global cookie jar, storage, and fetch library
-    logger.debug(`Loading cookies from: ${cookiejar_filename}`);
-    cookieJar = new CookieJar(new FileCookieStore(cookiejar_filename));
-    fetch = fetchCookie(nodeFetch, cookieJar);
-
-    // Extract build number from FoundryVTT version
-    // FoundryVTT versions looks like x.yyy where y is a build
-    const foundry_build: string | undefined = foundry_version.split(".").pop();
-
-    if (!foundry_build) {
-        logger.error(
-            `Unable to extract build number from version: ${foundry_version}`,
-        );
+await runCli(logger, async () => {
+    const retryOption = String(values.retry);
+    const retries = parseNonNegativeInt(retryOption);
+    if (retries === undefined) {
         throw new Error(
-            `Unable to extract build number from version: ${foundry_version}`,
+            `--retry must be a non-negative safe integer.  Found: ${retryOption}`,
         );
     }
-
-    // Generate a presigned URL and print it to stdout.
-    const releaseURL: string | null = await fetchReleaseURL(
-        foundry_build,
-        retries,
-    );
-
-    if (releaseURL) {
-        // The endpoint is keyed on the build number alone, so requesting a
-        // nonexistent generation (e.g. 11.331 when build 331 belongs to v12)
-        // returns a different generation's release.  The presigned URL embeds
-        // the real version; catch the mismatch before a download.  Best
-        // effort: an unparseable URL skips the check, and the entrypoint
-        // verifies the archive contents as the backstop.
-        const url_version = releaseURL.match(
-            /(?:releases\/|foundryvtt[^/]*?-)(\d+\.\d+(?:\.\d+)?)/i,
-        )?.[1];
-        if (url_version && url_version !== foundry_version) {
-            logger.error(
-                `Build ${foundry_build} belongs to Foundry Virtual Tabletop ` +
-                    `${url_version}, not the requested ${foundry_version}.  ` +
-                    `Version ${foundry_version} does not appear to exist.`,
-            );
-            return -1;
-        }
-        process.stdout.write(releaseURL);
-        return 0;
-    } else {
-        logger.error("Could not fetch a release URL.");
-        return -1;
-    }
-}
-
-(async () => {
-    process.exitCode = await main();
-})();
+    logger.debug(`Loading cookies from: ${cookiejar}`);
+    const session = FoundrySession.load(cookiejar, { logger, userAgent });
+    process.stdout.write(await session.releaseUrl(version, retries));
+});

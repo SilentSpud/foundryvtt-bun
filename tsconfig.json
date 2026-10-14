@@ -1,24 +1,29 @@
 {
   "compilerOptions": {
-    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "ES6",
+    "lib": [
+      "ESNext"
+    ],
+    "module": "Preserve",
+    "moduleDetection": "force",
     "moduleResolution": "bundler",
-    "noEmitOnError": true,
+    "noEmit": true,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": true,
+    "noImplicitOverride": true,
     "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "outDir": "dist",
-    "removeComments": true,
-    "rootDir": "./src",
+    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
-    "sourceMap": true,
     "strict": true,
-    "strictNullChecks": true,
-    "target": "es2021"
+    "target": "ESNext",
+    "types": [
+      "bun"
+    ],
+    "verbatimModuleSyntax": true
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "tools/**/*.ts"
   ]
 }

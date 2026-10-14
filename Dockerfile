@@ -10,7 +10,6 @@ ARG FOUNDRY_VERSION
 ARG NODE_MAJOR_VERSION=24
 ARG DEBIAN_SUITE=trixie
 ARG NODE_IMAGE_VERSION=${NODE_MAJOR_VERSION}-${DEBIAN_SUITE}-slim
-ARG NPM_VERSION=11.12.1
 ARG FOUNDRYVTT_CLI_VERSION=3.0.4
 
 # This stage exists solely to track the state of the Debian archives that carry
@@ -38,42 +37,44 @@ RUN --mount=type=bind,from=archive-state,target=/run/archive-state \
   && apt-get upgrade -y --with-new-pkgs \
   && rm -rf /var/lib/apt/lists/*
 
+# Bun runs the container utilities: the entrypoint, the health check, the
+# account helpers, and the fvtt wrapper.  Foundry itself runs on Node.js.
+# Bun is published for amd64 and arm64 only, which bounds this image's
+# platforms.
+FROM oven/bun:1.4.3-slim AS bun-binary
+
 FROM patched-base AS base
-ARG NPM_VERSION
-RUN npm install -g npm@${NPM_VERSION}
+COPY --from=bun-binary /usr/local/bin/bun /usr/local/bin/bun
 
 # Install the Foundry VTT CLI in an isolated stage.  Its classic-level
-# dependency ships prebuilt bindings for amd64 and arm64 only; on ppc64le
-# node-gyp compiles it from source, which needs a toolchain.  The toolchain
-# never leaves this stage — the final stage copies only the installed
-# package.  On s390x the CLI is omitted entirely: classic-level's vendored
-# LevelDB does not implement atomic pointers for that architecture, so it
-# cannot be built (the fvtt wrapper explains this at runtime).  The mkdir
-# guarantees the directory the final stage copies always exists.
+# dependency ships prebuilt bindings for amd64 and arm64, so no toolchain is
+# needed.  The final stage copies only the installed package tree.  The CLI's
+# argument parser (yargs) reports the version of the nearest package.json
+# above its node_modules, which is this install directory's manifest, so the
+# manifest carries the CLI's version.
 FROM base AS fvtt-cli-stage
 ARG FOUNDRYVTT_CLI_VERSION
-ARG TARGETARCH
-RUN mkdir -p /usr/local/lib/node_modules/@foundryvtt \
-  && if [ "${TARGETARCH}" != "s390x" ]; then \
-  apt-get update \
-  && apt-get install -y --no-install-recommends g++ make python3 \
-  && rm -rf /var/lib/apt/lists/* \
-  && npm install -g @foundryvtt/foundryvtt-cli@${FOUNDRYVTT_CLI_VERSION}; \
-  fi
+WORKDIR /usr/local/lib/foundryvtt-cli
+RUN printf '{"name":"foundryvtt-cli-install","private":true,"version":"%s"}\n' \
+  "${FOUNDRYVTT_CLI_VERSION}" > package.json \
+  && bun add --exact --production "@foundryvtt/foundryvtt-cli@${FOUNDRYVTT_CLI_VERSION}" \
+  && test -f node_modules/@foundryvtt/foundryvtt-cli/fvtt.mjs
 
-FROM base AS compile-typescript-stage
+# Bundle each utility into a standalone script; the bundles carry their
+# dependencies, so the final image needs no node_modules for them.
+FROM base AS build-stage
 
 WORKDIR /root
 
 COPY \
   package.json \
-  package-lock.json \
+  bun.lock \
   tsconfig.json \
   ./
-RUN npm ci && npx tsc --version
-COPY /src/*.ts src/
-RUN npx tsc
-RUN grep -l "#!" dist/*.js | xargs chmod a+x
+RUN bun install --frozen-lockfile
+COPY /src/ src/
+COPY /tools/build.ts tools/
+RUN bun run build
 
 FROM base AS optional-release-stage
 
@@ -89,12 +90,9 @@ RUN test -n "${FOUNDRY_VERSION}" || { echo "ERROR: FOUNDRY_VERSION must be passe
 ENV ARCHIVE="foundryvtt-${FOUNDRY_VERSION}.zip"
 
 WORKDIR /root
-COPY --from=compile-typescript-stage \
-  /root/package.json \
-  /root/package-lock.json \
+COPY --from=build-stage \
   /root/dist/authenticate.js \
   /root/dist/get_release_url.js \
-  /root/dist/logging.js \
   ./
 # .placeholder file to mitigate https://github.com/moby/moby/issues/37965
 RUN mkdir dist && touch dist/.placeholder
@@ -102,10 +100,10 @@ RUN mkdir dist && touch dist/.placeholder
 RUN \
   --mount=type=secret,id=foundry_username,required=false \
   --mount=type=secret,id=foundry_password,required=false \
-  npm ci --omit=dev && \
   if [ -f /run/secrets/foundry_username ] && [ -f /run/secrets/foundry_password ]; then \
   ./authenticate.js "$(cat /run/secrets/foundry_username)" "$(cat /run/secrets/foundry_password)" cookiejar.json && \
   presigned_url=$(./get_release_url.js --retry 5 cookiejar.json "${FOUNDRY_VERSION}") && \
+  rm -f cookiejar.json && \
   DOWNLOAD_URL="${presigned_url}"; \
   elif [ -n "${FOUNDRY_RELEASE_URL}" ]; then \
   DOWNLOAD_URL="${FOUNDRY_RELEASE_URL}"; \
@@ -138,42 +136,37 @@ ENV HOME=/home/node
 WORKDIR $HOME
 
 COPY --from=optional-release-stage /root/dist/ .
-COPY --from=compile-typescript-stage /root/dist/ .
-COPY \
-  package.json \
-  package-lock.json \
-  src/backoff.sh \
-  src/cache_prune.sh \
-  src/check_health.sh \
-  src/download_lock.sh \
-  src/entrypoint.sh \
-  src/env_flag.sh \
-  src/launcher.sh \
-  src/lifecycle.sh \
-  src/logging.sh \
-  src/release_verify.sh \
+COPY --from=build-stage \
+  /root/dist/authenticate.js \
+  /root/dist/check_health.js \
+  /root/dist/entrypoint.js \
+  /root/dist/get_license.js \
+  /root/dist/get_release_url.js \
   ./
+# Log helpers for user patch scripts (CONTAINER_PATCHES, CONTAINER_PATCH_URLS).
+COPY src/logging.sh ./
+# The entrypoint extracts releases with unzip; curl, jq, patch, and sed stay
+# available to user patch scripts.  npm is not needed at runtime.
 RUN mkdir -p resources /data \
   && chmod a+rx /home/node \
   && chmod a+rwx resources /data \
   && apt-get update && apt-get install -y \
   curl \
-  file \
   jq \
   patch \
   sed \
   tzdata \
   unzip \
   && rm -rf /var/lib/apt/lists/* \
-  && npm ci --omit=dev && echo ${CONTAINER_VERSION} > image_version.txt \
-  && npm uninstall -g npm \
-  && rm -rf /usr/local/lib/node_modules/npm
+  && echo ${CONTAINER_VERSION} > image_version.txt \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+  /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
-# The Foundry VTT CLI, wrapped by fvtt.sh which pins its configuration to a
+# The Foundry VTT CLI, wrapped by fvtt.js which pins its configuration to a
 # writable, persistent location.  See the "Foundry VTT CLI" section of the
 # README for usage.
-COPY --from=fvtt-cli-stage /usr/local/lib/node_modules/@foundryvtt /usr/local/lib/node_modules/@foundryvtt
-COPY src/fvtt.sh /usr/local/bin/fvtt
+COPY --from=fvtt-cli-stage /usr/local/lib/foundryvtt-cli /usr/local/lib/foundryvtt-cli
+COPY --from=build-stage /root/dist/fvtt.js /usr/local/bin/fvtt
 
 VOLUME ["/data"]
 # HTTP Server
@@ -185,7 +178,7 @@ EXPOSE 30000/tcp
 # EXPOSE 49152-65535/udp
 
 USER node
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.js"]
 CMD ["resources/app/main.mjs", "--port=30000", "--headless", "--noupdate",\
   "--dataPath=/data"]
-HEALTHCHECK --start-period=3m --interval=30s --timeout=5s CMD ./check_health.sh
+HEALTHCHECK --start-period=3m --interval=30s --timeout=5s CMD ./check_health.js

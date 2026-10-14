@@ -38,130 +38,37 @@ regular contributor, then you will want to set up
 do that, the CI checks will run locally before you even write your
 commit message.  This speeds up your development cycle considerably.
 
-### Setting up pre-commit ###
+### Setting up a development environment ###
 
-There are a few ways to do this, but we prefer to use
-[`pyenv`](https://github.com/pyenv/pyenv) and
-[`pyenv-virtualenv`](https://github.com/pyenv/pyenv-virtualenv) to
-create and manage a Python virtual environment specific to this
-project.
-
-We recommend using the `setup-env` script located in this repository,
-as it automates the entire environment configuration process. The
-dependencies required to run this script are
-[GNU `getopt`](https://github.com/util-linux/util-linux/blob/master/misc-utils/getopt.1.adoc),
-[`pyenv`](https://github.com/pyenv/pyenv), and [`pyenv-virtualenv`](https://github.com/pyenv/pyenv-virtualenv).
-If these tools are already configured on your system, you can simply run the
-following command:
+The container's utilities, tests, and tooling are written in TypeScript and
+run with [Bun](https://bun.sh).  Install Bun, then run:
 
 ```console
-./setup-env
+bun run setup
 ```
 
-Otherwise, follow the steps below to manually configure your
-environment.
+This installs the project dependencies, installs the git pre-commit hooks
+(when [pre-commit](https://pre-commit.com/) is available, for example via
+`pipx install pre-commit` or `brew install pre-commit`), and configures
+the git remotes for upstream "lineage" repositories.
 
-#### Installing and using GNU `getopt`, `pyenv`, and `pyenv-virtualenv` ####
+Common tasks:
 
-On macOS, we recommend installing [brew](https://brew.sh/).  Then
-installation is as simple as `brew install gnu-getopt pyenv pyenv-virtualenv` and
-adding this to your profile:
+| Command | Purpose |
+| ------- | ------- |
+| `bun run typecheck` | Type-check the sources, tests, and tools. |
+| `bun test tests/unit` | Run the unit tests. |
+| `make build` | Build the container image. |
+| `make test` | Run the container tests against the built image. |
+| `bun run format` | Format the TypeScript sources with Prettier. |
 
-```bash
-# GNU getopt must be explicitly added to the path since it is
-# keg-only (https://docs.brew.sh/FAQ#what-does-keg-only-mean)
-export PATH="$(brew --prefix)/opt/gnu-getopt/bin:$PATH"
+The container tests need Docker.  They run without credentials using a fake
+release archive; set `FOUNDRY_USERNAME` and `FOUNDRY_PASSWORD` to also
+download and start a real release.
 
-# Setup pyenv
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-```
-
-For Linux, Windows Subsystem for Linux (WSL), or macOS (if you
-don't want to use `brew`) you can use
-[pyenv/pyenv-installer](https://github.com/pyenv/pyenv-installer) to
-install the necessary tools. Before running this ensure that you have
-installed the prerequisites for your platform according to the
-[`pyenv` wiki
-page](https://github.com/pyenv/pyenv/wiki/common-build-problems).
-GNU `getopt` is included in most Linux distributions as part of the
-[`util-linux`](https://github.com/util-linux/util-linux) package.
-
-On WSL you should treat your platform as whatever Linux distribution
-you've chosen to install.
-
-Once you have installed `pyenv` you will need to add the following
-lines to your `.bash_profile` (or `.profile`):
-
-```bash
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
-```
-
-and then add the following lines to your `.bashrc`:
-
-```bash
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-```
-
-If you want more information about setting up `pyenv` once installed, please run
-
-```console
-pyenv init
-```
-
-and
-
-```console
-pyenv virtualenv-init
-```
-
-for the current configuration instructions.
-
-If you are using a shell other than `bash` you should follow the
-instructions that the `pyenv-installer` script outputs.
-
-You will need to reload your shell for these changes to take effect so
-you can begin to use `pyenv`.
-
-For a list of Python versions that are already installed and ready to
-use with `pyenv`, use the command `pyenv versions`.  To see a list of
-the Python versions available to be installed and used with `pyenv`
-use the command `pyenv install --list`.  You can read more about
-the [many things that `pyenv` can do](https://github.com/pyenv/pyenv/blob/master/COMMANDS.md).
-See the [usage information](https://github.com/pyenv/pyenv-virtualenv#usage)
-for the additional capabilities that pyenv-virtualenv adds to the `pyenv`
-command.
-
-#### Creating the Python virtual environment ####
-
-Once `pyenv` and `pyenv-virtualenv` are installed on your system, you
-can create and configure the Python virtual environment with these
-commands:
-
-```console
-cd foundryvtt-docker
-pyenv virtualenv <python_version_to_use> foundryvtt-docker
-pyenv local foundryvtt-docker
-pip install --requirement requirements-dev.txt
-```
-
-#### Installing the pre-commit hook ####
-
-Now setting up pre-commit is as simple as:
-
-```console
-pre-commit install
-```
-
-At this point the pre-commit checks will run against any files that
-you attempt to commit.  If you want to run the checks against the
-entire repo, just execute `pre-commit run --all-files`.
+At this point the pre-commit checks will run against any files that you
+attempt to commit.  If you want to run the checks against the entire repo,
+just execute `pre-commit run --all-files`.
 
 ## License ##
 
