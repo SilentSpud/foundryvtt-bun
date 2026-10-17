@@ -3,13 +3,10 @@
 ARG CONTAINER_VERSION
 ARG FOUNDRY_RELEASE_URL
 ARG FOUNDRY_VERSION
-# Base image coordinates.  DEBIAN_SUITE is the single source of truth: it
-# selects the node image variant below and the Debian archives tracked by the
-# archive-state stage.  Global ARG defaults are expanded against previously
-# declared global ARGs, so the declaration order here matters.
-ARG NODE_MAJOR_VERSION=24
+# DEBIAN_SUITE must match the Debian release the Bun image (the FROM line of
+# patched-base) is built on; it selects the archives tracked by the
+# archive-state stage.
 ARG DEBIAN_SUITE=trixie
-ARG NODE_IMAGE_VERSION=${NODE_MAJOR_VERSION}-${DEBIAN_SUITE}-slim
 ARG FOUNDRYVTT_CLI_VERSION=3.0.4
 
 # This stage exists solely to track the state of the Debian archives that carry
@@ -26,32 +23,28 @@ ARG DEBIAN_SUITE
 ADD https://deb.debian.org/debian-security/dists/${DEBIAN_SUITE}-security/InRelease /security
 ADD https://deb.debian.org/debian/dists/${DEBIAN_SUITE}-updates/InRelease /updates
 
-# Apply Debian security updates for every downstream stage.  The upstream node
-# image's Debian rootfs is built from the main archive only, so fixes published
-# to <suite>-security are absent from it until a Debian point release folds
-# them into main.  This affects the shipped image and the stages that handle
-# credentials and untrusted downloads alike.
-FROM public.ecr.aws/docker/library/node:${NODE_IMAGE_VERSION} AS patched-base
+# Bun runs everything in this image: the container utilities (entrypoint,
+# health check, account helpers, fvtt wrapper) and Foundry itself.  There is
+# no Node.js.  The glibc-based (Debian) Bun image is used rather than Alpine
+# because Foundry's LevelDB addon (classic-level) ships no musl build for
+# arm64.  Bun is published for amd64 and arm64 only, which bounds this
+# image's platforms.  Apply Debian security updates for every downstream
+# stage, including those that handle credentials and untrusted downloads:
+# the upstream rootfs is built from the main archive only, so fixes published
+# to <suite>-security are absent until a point release folds them in.
+FROM oven/bun:1.4.3-slim AS patched-base
 RUN --mount=type=bind,from=archive-state,target=/run/archive-state \
   apt-get update \
   && apt-get upgrade -y --with-new-pkgs \
   && rm -rf /var/lib/apt/lists/*
 
-# Bun runs the container utilities: the entrypoint, the health check, the
-# account helpers, and the fvtt wrapper.  Foundry itself runs on Node.js.
-# Bun is published for amd64 and arm64 only, which bounds this image's
-# platforms.
-FROM oven/bun:1.4.3-slim AS bun-binary
-
 FROM patched-base AS base
-COPY --from=bun-binary /usr/local/bin/bun /usr/local/bin/bun
 
-# Install the Foundry VTT CLI in an isolated stage.  Its classic-level
-# dependency ships prebuilt bindings for amd64 and arm64, so no toolchain is
-# needed.  The final stage copies only the installed package tree.  The CLI's
-# argument parser (yargs) reports the version of the nearest package.json
-# above its node_modules, which is this install directory's manifest, so the
-# manifest carries the CLI's version.
+# Install the Foundry VTT CLI in an isolated stage.  The final stage copies
+# only the installed package tree.  The CLI's argument parser (yargs) reports
+# the version of the nearest package.json above its node_modules, which is
+# this install directory's manifest, so the manifest carries the CLI's
+# version.
 FROM base AS fvtt-cli-stage
 ARG FOUNDRYVTT_CLI_VERSION
 WORKDIR /usr/local/lib/foundryvtt-cli
@@ -111,10 +104,10 @@ RUN \
   echo "No valid credentials or pre-signed URL provided. Skipping pre-installation."; \
   fi && \
   if [ -n "${DOWNLOAD_URL}" ]; then \
-  apt-get update && apt-get install -y unzip wget && \
-  wget -O ${ARCHIVE} "${DOWNLOAD_URL}" && \
+  apt-get update && apt-get install -y --no-install-recommends curl unzip && \
+  curl --fail --location --output "${ARCHIVE}" "${DOWNLOAD_URL}" && \
   mkdir -p "dist/resources/app" && \
-  unzip -d "dist/resources/app" ${ARCHIVE}; \
+  unzip -d "dist/resources/app" "${ARCHIVE}"; \
   fi
 
 FROM base AS final-stage
@@ -131,6 +124,9 @@ LABEL org.opencontainers.image.authors="markf+github@geekpad.com"
 LABEL org.opencontainers.image.vendor="Geekpad"
 
 ENV FOUNDRY_VERSION=${FOUNDRY_VERSION}
+# The home directory keeps its historical path so existing mounts and
+# documentation stay valid.  It is owned by root and readable by the image's
+# UID 1000 (bun) user, as before.
 ENV HOME=/home/node
 
 WORKDIR $HOME
@@ -145,22 +141,24 @@ COPY --from=build-stage \
   ./
 # Log helpers for user patch scripts (CONTAINER_PATCHES, CONTAINER_PATCH_URLS).
 COPY src/logging.sh ./
-# The entrypoint extracts releases with unzip; curl, jq, patch, and sed stay
-# available to user patch scripts.  npm is not needed at runtime.
+# The entrypoint extracts releases with unzip, runs patch scripts with bash,
+# and reports mounts with findmnt; curl, jq, patch, and sed stay available to
+# user patch scripts.
 RUN mkdir -p resources /data \
   && chmod a+rx /home/node \
   && chmod a+rwx resources /data \
-  && apt-get update && apt-get install -y \
+  && apt-get update && apt-get install -y --no-install-recommends \
+  bash \
+  ca-certificates \
   curl \
   jq \
   patch \
   sed \
   tzdata \
   unzip \
+  util-linux \
   && rm -rf /var/lib/apt/lists/* \
-  && echo ${CONTAINER_VERSION} > image_version.txt \
-  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
-  /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+  && echo ${CONTAINER_VERSION} > image_version.txt
 
 # The Foundry VTT CLI, wrapped by fvtt.js which pins its configuration to a
 # writable, persistent location.  See the "Foundry VTT CLI" section of the
@@ -177,7 +175,7 @@ EXPOSE 30000/tcp
 # EXPOSE 33478/udp
 # EXPOSE 49152-65535/udp
 
-USER node
+USER bun
 ENTRYPOINT ["./entrypoint.js"]
 CMD ["resources/app/main.mjs", "--port=30000", "--headless", "--noupdate",\
   "--dataPath=/data"]

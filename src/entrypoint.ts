@@ -740,15 +740,14 @@ async function run(args: string[]): Promise<number> {
 
     testVolumePermissions();
 
-    const foundryVersion = env.FOUNDRY_VERSION;
-    if (!foundryVersion) {
-        log.error("FOUNDRY_VERSION is not set.");
-        throw new ExitError(1);
-    }
     const userAgent = `${DEFAULT_USER_AGENT} (felddy/foundryvtt:${imageVersion})`;
 
     // The container version is a semver x.y.z; FOUNDRY_VERSION looks like x.yyy.
     const expected = imageVersion.replace(/\.[^.]*$/, "");
+    // The image sets FOUNDRY_VERSION, but an empty override (such as an
+    // unset compose substitution) means "the image's own version".
+    const foundryVersion = env.FOUNDRY_VERSION || expected;
+    env.FOUNDRY_VERSION = foundryVersion;
     if (expected !== foundryVersion) {
         log.warn(
             "FOUNDRY_VERSION has been manually set and does not match the container's version.",

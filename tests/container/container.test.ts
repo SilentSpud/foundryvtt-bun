@@ -60,7 +60,7 @@ const FAKE_MAIN = `
 import { writeFileSync } from "node:fs";
 import http from "node:http";
 const port = Number((process.argv.find((a) => a.startsWith("--port=")) ?? "--port=30000").slice(7));
-writeFileSync("/data/server-env.json", JSON.stringify({ env: process.env, argv: process.argv.slice(2) }));
+writeFileSync("/data/server-env.json", JSON.stringify({ env: process.env, argv: process.argv.slice(2), bun: process.versions.bun ?? null }));
 const server = http.createServer((req, res) => {
     if (req.url.endsWith("/api/status")) {
         res.writeHead(200, { "content-type": "application/json", "set-cookie": "session=fake" });
@@ -120,6 +120,21 @@ async function start(
     expect(result.code).toBe(0);
 }
 
+test("the image has no Node.js; `node` is Bun's fallback alias", async () => {
+    // The Bun image puts a `node` symlink to bun on the PATH so that tools
+    // invoking `node` run on Bun.  There is no real Node.js and no npm.
+    const result = await docker(
+        "run",
+        "--rm",
+        "--entrypoint",
+        "sh",
+        IMAGE,
+        "-c",
+        'readlink -f "$(command -v node)"; command -v npm npx || true; ls /usr/local/lib/node_modules 2>/dev/null || true',
+    );
+    expect(result.stdout.trim()).toBe("/usr/local/bin/bun");
+});
+
 test("--version prints the project version", async () => {
     const result = await docker("run", "--rm", IMAGE, "--version");
     expect(result.code).toBe(0);
@@ -169,6 +184,8 @@ describe("fake release", () => {
         expect(server.env.FOUNDRY_PASSWORD).toBeUndefined();
         expect(server.env.FOUNDRY_ADMIN_KEY).toBeUndefined();
         expect(server.argv).toContain("--noipdiscovery");
+        // Foundry runs on Bun.
+        expect(server.bun).toBeString();
 
         // The language file was patched inside the container.
         const lang = await docker(
@@ -237,6 +254,29 @@ describe("fake release", () => {
         expect(readFileSync(`${data}/patch-marker`, "utf8").trim()).toBe(
             "patched",
         );
+    });
+
+    test("a clean run of an installed release clears earlier failures", async () => {
+        const data = dataDir();
+        fakeRelease(`${data}/container_cache`);
+        const name = uniqueName("fvtt-restart");
+        await start(name, data, {});
+        await waitForLog(name, (logs) => logs.includes(READY_MESSAGE));
+        expect((await docker("stop", "--time", "20", name)).code).toBe(0);
+
+        // A failure recorded by an earlier run; the restart skips the install
+        // step because the release is already in the container.
+        const stateFile = `${data}/container_cache/backoff_state.json`;
+        await Bun.write(
+            stateFile,
+            JSON.stringify({ consecutive_failures: 3, last_failure_epoch: 0 }),
+        );
+        expect((await docker("start", name)).code).toBe(0);
+        await waitForLog(name, (logs) => logs.split(READY_MESSAGE).length > 2);
+        const logs = (await docker("logs", name)).stdout;
+        expect(logs).toContain("is installed.");
+        expect((await docker("stop", "--time", "20", name)).code).toBe(0);
+        expect(existsSync(stateFile)).toBe(false);
     });
 });
 

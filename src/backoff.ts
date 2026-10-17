@@ -95,7 +95,9 @@ function isCount(value: unknown): value is number {
 
 /** Delete the failure state after a successful (or operator-ended) run. */
 export function backoffReset(env: Env, logger: Logger): void {
-    const cache = env.CONTAINER_CACHE ?? "";
+    // Same default as backoffOnFailure, so a run that skips the install step
+    // (and so never resolves the cache path) still clears earlier failures.
+    const cache = env.CONTAINER_CACHE ?? DEFAULT_CACHE;
     logger.debug(`backoff_reset: CONTAINER_CACHE='${cache}'`);
     const stateFile = `${cache}/${STATE_FILENAME}`;
     if (cache && isFile(stateFile)) {

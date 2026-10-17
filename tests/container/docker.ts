@@ -2,8 +2,10 @@
 
 import { readFileSync } from "node:fs";
 
-export const IMAGE = process.env.IMAGE_TAG || "local/test-image:latest";
 export const PROJECT_VERSION = readFileSync("src/version.txt", "utf8").trim();
+/** The image under test; defaults to the tag `bun run image` builds. */
+export const IMAGE =
+    process.env.IMAGE_TAG || `ghcr.io/felddy/foundryvtt:${PROJECT_VERSION}`;
 export const FOUNDRY_VERSION = PROJECT_VERSION.split(".").slice(0, 2).join(".");
 export const READY_MESSAGE = "Server started and listening on port";
 

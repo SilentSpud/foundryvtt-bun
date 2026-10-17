@@ -1,7 +1,7 @@
 /**
  * Prepare Foundry's configuration and launch the server.
  *
- * The server runs under Node.js with a clean environment: only variables
+ * The server runs on Bun (`bun run --bun`) with a clean environment: only variables
  * matching ENV_VAR_PASSLIST are carried over, so credentials and keys given
  * to the container never leak into the server process.
  */
@@ -15,13 +15,16 @@ import { foundryOptionsJson } from "./options.ts";
 import { hashAdminKey } from "./password.ts";
 import { ExitError, isFile } from "./util.ts";
 
-export const NODE_BIN = "/usr/local/bin/node";
+export const BUN_BIN = "/usr/local/bin/bun";
+/** `--bun` keeps Bun as the runtime even where a script asks for node. */
+export const SERVER_RUNTIME = [BUN_BIN, "run", "--bun"];
 
 /**
  * Environment variables that are carried over to the server process.  The
  * proxy pattern covers HTTP_PROXY, https_proxy, NO_PROXY, and so on.
  */
 export const ENV_VAR_PASSLIST: RegExp[] = [
+    /^BUN_.+$/,
     /^HOME$/,
     /^NODE_.+$/,
     /^TZ$/,
@@ -144,7 +147,7 @@ export async function launch(
 ): Promise<number> {
     writeConfig(configDir, env, logger);
     applyUmask(env, logger);
-    const argv = [NODE_BIN, ...serverArgs(args, env, logger)];
+    const argv = [...SERVER_RUNTIME, ...serverArgs(args, env, logger)];
     logger.info("Starting Foundry Virtual Tabletop.");
     return runChild(argv, {
         env: serverEnv(env),

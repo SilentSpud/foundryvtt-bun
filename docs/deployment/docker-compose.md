@@ -72,6 +72,47 @@ not persist across restarts** — manage configuration through `compose.yaml`
 instead.  To preserve hand-edited configuration files, set
 `CONTAINER_PRESERVE_CONFIG` to `true`.
 
+## Using a `.env` file ##
+
+To keep credentials out of `compose.yaml`, put them in a `.env` file next to
+it and reference them from the `environment` section.  Compose reads `.env`
+automatically for [variable substitution]; only the variables you reference
+reach the container.
+
+1. Create `.env` (and keep it out of version control):
+
+    ```dotenv
+    FOUNDRY_USERNAME=<your_username>
+    FOUNDRY_PASSWORD=<your_password>
+    FOUNDRY_ADMIN_KEY=<your_admin_key>
+    ```
+
+1. Reference the variables from `compose.yaml`:
+
+    ```yaml
+    ---
+    services:
+      foundry:
+        image: ghcr.io/felddy/foundryvtt:14
+        hostname: my_foundry_host
+        environment:
+          - FOUNDRY_USERNAME=${FOUNDRY_USERNAME:-}
+          - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD:-}
+          - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY:-}
+          - FOUNDRY_TELEMETRY=true
+        volumes:
+          - type: bind
+            source: ./data
+            target: /data
+        ports:
+          - target: 30000
+            published: 30000
+            protocol: tcp
+        restart: unless-stopped
+    ```
+
+Variables set in your shell take precedence over the `.env` file.
+
 ## Using secrets ##
 
 Sensitive values can be passed as a secret file instead of environment
@@ -145,3 +186,4 @@ to a new major version, change the tag in `compose.yaml` first, then pull.
 [environment variables]: ../../README.md#environment-variables
 [foundryvtt.com]: https://foundryvtt.com/auth/register/
 [secrets]: ../../README.md#secrets
+[variable substitution]: https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/

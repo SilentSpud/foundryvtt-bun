@@ -84,7 +84,7 @@ if (import.meta.main) {
     // The terminal delivers Ctrl-C to the whole process group, so the CLI
     // receives SIGINT directly; just outlive it.
     const status = await runChild(
-        ["node", CLI_MAIN, ...process.argv.slice(2)],
+        ["bun", "run", "--bun", CLI_MAIN, ...process.argv.slice(2)],
         {
             env: { ...process.env, XDG_DATA_HOME: dataHome },
             forward: ["SIGTERM"],

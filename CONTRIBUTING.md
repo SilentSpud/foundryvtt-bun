@@ -58,8 +58,10 @@ Common tasks:
 | ------- | ------- |
 | `bun run typecheck` | Type-check the sources, tests, and tools. |
 | `bun test tests/unit` | Run the unit tests. |
-| `make build` | Build the container image. |
-| `make test` | Run the container tests against the built image. |
+| `bun run image` | Build the container image with `docker buildx bake` (see `docker-bake.hcl`). |
+| `bun run test:container` | Run the container tests against the built image. |
+| `bun run version` | Print the container and Foundry versions. |
+| `bun run release <x.y.z>` | Set a new version and commit it. |
 | `bun run format` | Format the TypeScript sources with Prettier. |
 
 The container tests need Docker.  They run without credentials using a fake

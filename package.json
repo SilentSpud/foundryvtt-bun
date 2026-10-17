@@ -32,12 +32,17 @@
     "bump-version": "bun tools/bump_version.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "image": "bun tools/bake.ts",
     "lint": "bun run typecheck && bun run format:check",
+    "release": "bun tools/bump_version.ts set",
+    "ruleset:apply": "bun tools/rulesets.ts apply",
+    "ruleset:export": "bun tools/rulesets.ts export",
     "setup": "bun tools/setup_env.ts",
     "tag": "bun tools/tag.ts",
     "test": "bun test tests/unit",
     "test:container": "bun test --timeout 600000 tests/container",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "version": "bun tools/version.ts"
   },
   "type": "module",
   "version": "3.0.0"

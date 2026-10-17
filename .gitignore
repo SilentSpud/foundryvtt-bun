@@ -5,6 +5,9 @@
 ## DirEnv ##
 .envrc
 
+## Credentials ##
+.env
+
 ## FoundryVTT ##
 cookiejar.json
 license.json
@@ -12,3 +15,7 @@ license.json
 ## Javascript / Typescript ##
 dist
 node_modules
+
+## GitKraken ##
+# Installer archives GitKraken drops into the working tree (archive-*/gk_*.zip).
+gk*.zip

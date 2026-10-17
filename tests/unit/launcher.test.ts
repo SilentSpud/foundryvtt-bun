@@ -27,6 +27,7 @@ describe("environment passlist", () => {
         "HOME",
         "TZ",
         "NODE_OPTIONS",
+        "BUN_CONFIG_VERBOSE_FETCH",
     ])("%s is carried over", (name) => {
         expect(isPassed(name)).toBe(true);
     });
