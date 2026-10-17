@@ -1,9 +1,6 @@
 /**
- * Minimal leveled logger shared by every container utility.
- *
- * Lines look like `Name | 2024-01-31 12:34:56 | [info] message`, with the
- * level colorized, matching the format of src/logging.sh (which remains as
- * the log helper library for user patch scripts).
+ * Leveled logger.  The line format must match src/logging.sh, which patch
+ * scripts still use.
  */
 
 export type LogLevel = "error" | "warn" | "info" | "debug";

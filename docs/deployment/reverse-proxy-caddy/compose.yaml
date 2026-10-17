@@ -27,11 +27,10 @@ services:
       - target: 80
         published: 80
         protocol: tcp
-      # HTTPS.
       - target: 443
         published: 443
         protocol: tcp
-      # HTTPS over HTTP/3 (QUIC).
+      # HTTP/3 (QUIC).
       - target: 443
         published: 443
         protocol: udp

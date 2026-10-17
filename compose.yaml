@@ -7,14 +7,11 @@ services:
       - type: bind
         source: ./data
         target: /data
-    # Every setting is substituted from the shell environment or from a .env
-    # file next to this file (see .env.example).  Compose reads .env for
-    # variable substitution only, so only the variables listed here reach the
-    # container.  An unset variable behaves as if it were not set at all; the
-    # defaults after ":-" are the container's own defaults.  CONTAINER_CACHE
-    # uses "-" so that setting it to an empty value still disables caching.
+    # Compose reads .env (see .env.example) for substitution only, so only the
+    # variables listed here reach the container.  CONTAINER_CACHE uses "-", not
+    # ":-", so an empty value still disables caching.
     #
-    # Long values such as lists and JSON go in .env on one line, for example:
+    # Lists and JSON go in .env on one line, for example:
     #   CONTAINER_PATCH_URLS="https://example.com/a.sh https://example.com/b.sh"
     #   FOUNDRY_DEMO_CONFIG='{"worldName": "demo-world", "sourceZip": "/data/demo-world.zip", "resetSeconds": 3600}'
     environment:

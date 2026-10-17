@@ -1,12 +1,5 @@
 #!/usr/bin/env bun
 
-/**
- * Configure a development environment for this repository:
- *   - installs the project dependencies with Bun
- *   - installs the git pre-commit hooks (when pre-commit is available)
- *   - configures git remotes for upstream "lineage" repositories
- */
-
 import { existsSync, readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 
@@ -63,8 +56,7 @@ if (Bun.which("pre-commit")) {
 `);
 }
 
-// Set up git remotes from the lineage configuration.  This fails harmlessly
-// if the remotes already exist.
+// Fails harmlessly when the lineage remotes already exist.
 if (existsSync(LINEAGE_CONFIG)) {
     const lineage = Bun.YAML.parse(readFileSync(LINEAGE_CONFIG, "utf8")) as {
         version?: string;
@@ -86,5 +78,4 @@ if (existsSync(LINEAGE_CONFIG)) {
     console.error("No lineage configuration found.");
 }
 
-// Qapla'
 console.log("Success!");

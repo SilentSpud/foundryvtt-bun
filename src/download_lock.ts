@@ -1,22 +1,13 @@
 /**
- * Arbitrate release downloads between container instances that share a
- * CONTAINER_CACHE volume.
+ * Arbitrate release downloads between instances sharing a CONTAINER_CACHE.
+ * Filesystem-only, so it works across hosts and nodes mounting the volume:
+ *   * mutual exclusion: atomic mkdir of a per-release lock directory
+ *   * liveness: size deltas between our own polls, immune to clock skew
+ *     and NFS attribute-cache lag
+ *   * crash recovery: a stalled lock is stolen by atomic rename
  *
- * Coordination is purely filesystem-based, so it works across containers,
- * hosts, and cluster nodes mounting the same cache volume:
- *   * mutual exclusion — atomic mkdir of a per-release lock directory
- *   * liveness — progress of the in-progress download files, measured as
- *     size deltas between our own successive polls (immune to clock skew
- *     between nodes and to NFS attribute-cache lag)
- *   * crash recovery — a stalled holder's lock is stolen with an atomic
- *     rename, so two waiters can never both claim the same stale lock
- *
- * Tunables (mainly for tests):
- *   DOWNLOAD_LOCK_POLL_SECONDS  seconds between polls          (default 5)
- *   DOWNLOAD_LOCK_STALL_TICKS   polls without progress before the holder
- *                               is presumed dead               (default 60)
- *   DOWNLOAD_LOCK_STEAL_LIMIT   stale locks stolen before giving up
- *                                                              (default 3)
+ * Tunables (mainly for tests): DOWNLOAD_LOCK_POLL_SECONDS,
+ * DOWNLOAD_LOCK_STALL_TICKS, DOWNLOAD_LOCK_STEAL_LIMIT.
  */
 
 import {
@@ -93,18 +84,13 @@ export function lockTunables(env: Env, logger: Logger): LockTunables {
     };
 }
 
-/**
- * In a container the entrypoint's PID is fixed and a restarted container
- * keeps its hostname, so this id is stable per run but not across runs —
- * which is exactly what the owner file (debug info only) needs.
- */
+/** Reused across container restarts; fine for the debug-only owner file. */
 export function instanceId(env: Env = process.env): string {
     return `${env.HOSTNAME || "unknown"}-${process.pid}`;
 }
 
 /**
- * Signature of every in-progress file matching the glob.  A change between
- * two of our own polls means the download is alive; comparing our successive
+ * Sizes of in-progress files matching the glob.  Comparing our own successive
  * observations avoids trusting any node's clock.
  */
 export function progressSignature(tempGlob: string): string {
@@ -174,12 +160,9 @@ export class DownloadLock {
         if (!this.held) {
             return;
         }
-        // Only remove the directory if it is still the one this process
-        // created.  After a steal-and-reacquire the same path belongs to a
-        // newer holder, and deleting it would break mutual exclusion.  A
-        // missing owner file is treated as "not ours": it may be a new
-        // holder's mkdir caught before its owner write, and an ownerless
-        // lock of our own is self-healing (it stalls and gets stolen).
+        // After a steal-and-reacquire the path may belong to a newer holder.
+        // A missing owner may be a new holder mid-mkdir, so it is not ours;
+        // an ownerless lock of our own stalls and gets stolen anyway.
         let owner = "";
         try {
             owner = readFileSync(`${this.held}/owner`, "utf8");
@@ -231,7 +214,6 @@ export class DownloadLock {
                 return SlotState.Unarbitrated;
             }
 
-            // Lock is busy: wait, watching the holder's progress.
             this.logger.info(
                 "Another instance is downloading this release.  Waiting for it to finish...",
             );
@@ -252,14 +234,9 @@ export class DownloadLock {
                         );
                         return SlotState.GaveUp;
                     }
-                    // Atomic rename claims the stale lock: exactly one
-                    // waiter's rename succeeds, so two waiters can never both
-                    // steal.  The random suffix keeps a leftover stale
-                    // directory from turning this into a move-into-directory.
-                    // Attempts count against the budget whether or not the
-                    // rename succeeds: where it persistently fails (e.g. a
-                    // sticky-bit cache directory) an uncounted failure would
-                    // loop stall -> failed steal -> stall forever.
+                    // Exactly one waiter's rename wins.  The random suffix stops
+                    // a leftover stale dir making this a move-into-directory.
+                    // Failures count too, or a sticky-bit dir loops forever.
                     steals++;
                     const staleDir = `${lockDir}.stale.${this.id}-${Math.floor(Math.random() * 32768)}`;
                     try {
@@ -278,7 +255,6 @@ export class DownloadLock {
                 }
                 await sleep(pollSeconds * 1000);
             }
-            // Lock gone (released or stolen): loop and try again.
         }
     }
 }

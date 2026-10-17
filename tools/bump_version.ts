@@ -4,9 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 import { bump, isValid, parse, type BumpPart } from "./semver.ts";
 
-// Stores the canonical version for the project.
 const VERSION_FILE = "src/version.txt";
-// Files that should be updated with the new version.
 const VERSION_FILES = [VERSION_FILE];
 
 const USAGE = `Update the version of the project.

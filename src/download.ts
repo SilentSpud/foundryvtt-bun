@@ -30,10 +30,8 @@ function formatBytes(bytes: number): string {
 }
 
 /**
- * Stream `url` to `output`.  Throws on network errors and HTTP error
- * statuses, leaving any partial output for the caller to remove.  Data is
- * written as it arrives, so the file's growing size shows other instances
- * sharing the cache that the download is alive.
+ * Stream `url` to `output`, throwing on HTTP errors and leaving partial output
+ * for the caller.  The growing file shows other instances it is alive.
  */
 export async function download(
     url: string,

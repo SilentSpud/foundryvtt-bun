@@ -1,9 +1,4 @@
-/**
- * Inspect release archives.
- *
- * Works for both release layouts: Node.js zips carry package.json at the
- * archive root; Linux zips carry it under resources/app/.
- */
+/** Inspect release archives in both the Node.js and Linux layouts. */
 
 import { closeSync, openSync, readSync } from "node:fs";
 
@@ -12,9 +7,8 @@ import { ZipReader } from "./zip.ts";
 const PACKAGE_MEMBERS = ["package.json", "resources/app/package.json"];
 
 /**
- * Pseudo-version ("generation.build") from a parsed package.json, or
- * undefined when the metadata is missing or partial.  Foundry no longer
- * maintains the "version" field, so it is built from the release object.
+ * Pseudo-version ("generation.build") from a parsed package.json.  Foundry no
+ * longer maintains the "version" field.
  */
 export function releaseVersion(pkg: unknown): string | undefined {
     const release = (
@@ -29,10 +23,8 @@ export function releaseVersion(pkg: unknown): string | undefined {
 }
 
 /**
- * The Foundry Virtual Tabletop version contained in a release zip, or
- * undefined when it cannot be determined (not a zip, no package.json, a
- * pre-v9 layout, or malformed metadata).  Callers should treat undefined as
- * "unknown", never as a mismatch.
+ * The Foundry version inside a release zip.  Undefined (e.g. a pre-v9 layout)
+ * means "unknown", never a mismatch.
  */
 export function releaseArchiveVersion(archive: string): string | undefined {
     let zip: ZipReader;

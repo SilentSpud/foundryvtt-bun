@@ -5,9 +5,7 @@ metadata:
   name: foundryvtt
   namespace: foundryvtt
 spec:
-  # Attach to your cluster's shared Gateway: adjust the name and namespace to
-  # match your environment.  TLS is typically terminated by a listener on that
-  # Gateway, and attaching from another namespace requires the Gateway's
+  # Point at your cluster's Gateway; attaching across namespaces requires its
   # `allowedRoutes` to permit it.
   parentRefs:
     - name: gateway

@@ -1,12 +1,6 @@
 /**
- * Boolean environment variable parsing shared by the container utilities.
- *
- * Accepted forms, case-insensitive:
- *   truthy: 1, true, yes, on
- *   falsy:  0, false, no, off
- * Empty and unset fall back to the caller's default.  Any other value logs a
- * warning naming the variable and also falls back to the default, so a typo
- * never silently flips behavior.
+ * Boolean environment flags.  Unrecognized values warn and fall back to the
+ * default, so a typo never silently flips behavior.
  */
 
 import { type Logger } from "./logging.ts";
@@ -17,9 +11,8 @@ const FALSY = new Set(["0", "false", "no", "off"]);
 type Env = Record<string, string | undefined>;
 
 /**
- * Interpret a raw string as a boolean flag word, or undefined when it is not
- * one — for options that accept a flag *or* another kind of value (such as a
- * file path) and must not warn on the latter.
+ * A flag word as a boolean, or undefined without warning, for options that
+ * also accept other values such as a file path.
  */
 export function flagValue(raw: string): boolean | undefined {
     const value = raw.toLowerCase();
@@ -70,10 +63,7 @@ export function envIsTrue(name: string, env: Env, logger?: Logger): boolean {
     return envFlag(name, false, env, logger) === true;
 }
 
-/**
- * True only when the named variable is explicitly set to a falsy word — for
- * default-true toggles, where unset must NOT read as false.
- */
+/** For default-true toggles, where unset must not read as false. */
 export function envIsFalse(name: string, env: Env, logger?: Logger): boolean {
     return envFlag(name, null, env, logger) === false;
 }

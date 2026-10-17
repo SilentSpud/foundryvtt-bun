@@ -1,17 +1,8 @@
-# Image build definitions for `docker buildx bake`.
+# Run through `bun run image [target]`, which derives CONTAINER_VERSION and
+# FOUNDRY_VERSION from src/version.txt.
 #
-# Run through `bun run image` (or `bun run image <target>`), which derives
-# CONTAINER_VERSION and FOUNDRY_VERSION from src/version.txt.  Invoking
-# `docker buildx bake` directly requires setting both variables yourself.
-#
-# Targets:
-#   image       the standard image for the local platform, loaded into docker
-#   multiarch   the standard image for every published platform; add --push
-#               (or another output) since multi-platform images cannot be
-#               loaded into the classic docker image store
-#   preinstall  an image with a Foundry release installed at build time, from
-#               FOUNDRY_USERNAME/FOUNDRY_PASSWORD (passed as build secrets) or
-#               FOUNDRY_RELEASE_URL
+# multiarch needs --push or another output: multi-platform images cannot be
+# loaded into the classic docker image store.
 
 variable "CONTAINER_VERSION" {
   default = ""

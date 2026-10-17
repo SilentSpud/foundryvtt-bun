@@ -70,15 +70,11 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
         env:
           LOG_LEVEL: ${{ inputs.log-level || 'info' }}
-          # Only operate on this repository; the repository-level config at
           # .github/renovate.json controls what gets updated.
           RENOVATE_REPOSITORIES: ${{ github.repository }}
           # The config is committed, so skip onboarding PRs.
           RENOVATE_ONBOARDING: "false"
-          # Commit via the GitHub API as the App instead of `git push`.  This
-          # produces GitHub-verified (signed) commits and makes the commit
-          # author identical to the one used by the renovate-readme-sync
-          # workflow, so Renovate does not treat the rendered README commit
-          # as a user modification and keeps rebasing its branches.
+          # API commits are signed and share renovate-readme-sync's author, so
+          # Renovate does not see its README commit as a user edit.
           RENOVATE_PLATFORM_COMMIT: enabled
           RENOVATE_DRY_RUN: ${{ inputs.dry-run == true && 'full' || null }}

@@ -10,7 +10,6 @@ on: # yamllint disable-line rule:truthy
     branches:
       - develop
 
-# Declare default permissions as read only.
 permissions: read-all
 
 jobs:
@@ -37,20 +36,13 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
-          # (Optional) Read-only PAT token. Uncomment the `repo_token` line below if:
-          # - you want to enable the Branch-Protection check on a *public* repository, or
-          # - you are installing Scorecards on a *private* repository
-          # To create the PAT, follow the steps in https://github.com/ossf/scorecard-action#authentication-with-pat.
+          # A read-only PAT enables the Branch-Protection check on public repos:
+          # https://github.com/ossf/scorecard-action#authentication-with-pat
           # repo_token: ${{ secrets.SCORECARD_READ_TOKEN }}
 
-          # Publish the results for public repositories to enable scorecard badges. For more details, see
-          # https://github.com/ossf/scorecard-action#publishing-results.
-          # For private repositories, `publish_results` will automatically be set to `false`, regardless
-          # of the value entered here.
+          # Enables scorecard badges; forced to false on private repositories.
           publish_results: true
 
-      # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
-      # format to the repository Actions tab.
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # tag=v7.0.2
         with:
@@ -58,7 +50,6 @@ jobs:
           path: results.sarif
           retention-days: 5
 
-      # Upload the results to GitHub's code scanning dashboard.
       - name: Upload to code-scanning
         uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # tag=v4.39.0
         with:

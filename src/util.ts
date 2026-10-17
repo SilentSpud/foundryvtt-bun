@@ -2,11 +2,7 @@
 
 import { statSync } from "node:fs";
 
-/**
- * Thrown to end the entrypoint with a specific exit code.  Every failure is
- * routed through the backoff logic in main(), so code paths that would have
- * called `exit 1` in a shell script throw this instead.
- */
+/** Thrown instead of exiting, so every failure goes through main()'s backoff. */
 export class ExitError extends Error {
     constructor(
         readonly code: number,

@@ -25,9 +25,8 @@ describe.skipIf(isWindows)("signals", () => {
     });
 
     test("SIGTERM is forwarded and the parent waits for the child's shutdown", async () => {
-        // A parent that forwards TERM to a child needing time to clean up
-        // (Foundry flushing data) must report the child's real exit code
-        // only after the child is done — not the 143 of an interrupted wait.
+        // The parent must report the child's real exit code after cleanup,
+        // not the 143 of an interrupted wait.
         const parent = `
             import { runChild } from ${JSON.stringify(`${import.meta.dir}/../../src/lifecycle.ts`)};
             const code = await runChild(

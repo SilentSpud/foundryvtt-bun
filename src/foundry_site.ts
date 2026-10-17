@@ -1,11 +1,6 @@
 /**
- * Client for the foundryvtt.com account pages: log in, list license keys,
- * and request presigned release download URLs.
- *
- * Cookies live in a tough-cookie jar.  The entrypoint keeps the session in
- * memory; the command-line utilities persist it to a JSON file so separate
- * invocations can share it.  Proxies are honored through Bun's fetch, which
- * reads HTTP_PROXY, HTTPS_PROXY, and NO_PROXY from the environment.
+ * Client for the foundryvtt.com account pages.  Proxies need no code here:
+ * Bun's fetch reads HTTP_PROXY, HTTPS_PROXY, and NO_PROXY itself.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -20,7 +15,7 @@ export const BASE_URL = "https://foundryvtt.com";
 /** Cookie domain used to hand the resolved username between utilities. */
 export const LOCAL_DOMAIN = "felddy.com";
 export const DEFAULT_USER_AGENT = `Bun/${Bun.version}`;
-const INITIAL_RETRY_DELAY_S = 120; // 2 minutes
+const INITIAL_RETRY_DELAY_S = 120;
 const USERNAME_RE = /\/community\/(?<username>.+)/;
 
 export interface SessionOptions {
@@ -242,7 +237,6 @@ export class FoundrySession {
         return keys[index - 1]!;
     }
 
-    /** Exponential sleep before a retry, logging the time remaining. */
     private async retryDelay(
         attempt: number,
         initialDelay: number,
@@ -262,14 +256,9 @@ export class FoundrySession {
     }
 
     /**
-     * Presigned download URL for a release ("generation.build").
-     *
-     * The endpoint is keyed on the build number alone, so requesting a
-     * nonexistent generation (e.g. 11.331 when build 331 belongs to v12)
-     * returns a different generation's release.  The presigned URL embeds the
-     * real version, so a mismatch is caught before any download.  Best
-     * effort: an unparseable URL skips the check, and the entrypoint verifies
-     * the archive contents as the backstop.
+     * Presigned download URL for a release ("generation.build").  The endpoint
+     * keys on build alone, so 11.331 can return v12's build 331; the version in
+     * the URL catches that, with the entrypoint's archive check as backstop.
      */
     async releaseUrl(
         version: string,

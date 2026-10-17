@@ -3,35 +3,21 @@
 ARG CONTAINER_VERSION
 ARG FOUNDRY_RELEASE_URL
 ARG FOUNDRY_VERSION
-# DEBIAN_SUITE must match the Debian release the Bun image (the FROM line of
-# patched-base) is built on; it selects the archives tracked by the
-# archive-state stage.
+# Must match the Debian release the Bun image in patched-base is built on.
 ARG DEBIAN_SUITE=trixie
 ARG FOUNDRYVTT_CLI_VERSION=3.0.5
 
-# This stage exists solely to track the state of the Debian archives that carry
-# security fixes.  BuildKit revalidates remote ADD sources on every build and
-# derives their cache key from the fetched content, so patched-base below - and
-# everything downstream of it - is invalidated exactly when these archives are
-# republished.  Without this, the RUN in patched-base would be cached
-# indefinitely and would silently stop applying new security updates.
-#
-# The InRelease files are architecture independent (~45 KB each) and are only
-# bind-mounted, so nothing from this stage is committed to any image layer.
+# BuildKit revalidates remote ADDs every build, so patched-base rebuilds exactly
+# when the security archives are republished instead of caching its upgrade
+# forever.  The files are only bind-mounted, never committed to a layer.
 FROM scratch AS archive-state
 ARG DEBIAN_SUITE
 ADD https://deb.debian.org/debian-security/dists/${DEBIAN_SUITE}-security/InRelease /security
 ADD https://deb.debian.org/debian/dists/${DEBIAN_SUITE}-updates/InRelease /updates
 
-# Bun runs everything in this image: the container utilities (entrypoint,
-# health check, account helpers, fvtt wrapper) and Foundry itself.  There is
-# no Node.js.  The glibc-based (Debian) Bun image is used rather than Alpine
-# because Foundry's LevelDB addon (classic-level) ships no musl build for
-# arm64.  Bun is published for amd64 and arm64 only, which bounds this
-# image's platforms.  Apply Debian security updates for every downstream
-# stage, including those that handle credentials and untrusted downloads:
-# the upstream rootfs is built from the main archive only, so fixes published
-# to <suite>-security are absent until a point release folds them in.
+# Debian, not Alpine: Foundry's LevelDB addon has no musl build for arm64.
+# The upstream rootfs lacks <suite>-security fixes until a point release, so
+# apply them here for every downstream stage.
 FROM oven/bun:1.4.3-slim AS patched-base
 RUN --mount=type=bind,from=archive-state,target=/run/archive-state \
   apt-get update \
@@ -40,11 +26,8 @@ RUN --mount=type=bind,from=archive-state,target=/run/archive-state \
 
 FROM patched-base AS base
 
-# Install the Foundry VTT CLI in an isolated stage.  The final stage copies
-# only the installed package tree.  The CLI's argument parser (yargs) reports
-# the version of the nearest package.json above its node_modules, which is
-# this install directory's manifest, so the manifest carries the CLI's
-# version.
+# yargs reports the version of the nearest package.json, which is this
+# install manifest, so the manifest carries the CLI's version.
 FROM base AS fvtt-cli-stage
 ARG FOUNDRYVTT_CLI_VERSION
 WORKDIR /usr/local/lib/foundryvtt-cli
@@ -53,8 +36,7 @@ RUN printf '{"name":"foundryvtt-cli-install","private":true,"version":"%s"}\n' \
   && bun add --exact --production "@foundryvtt/foundryvtt-cli@${FOUNDRYVTT_CLI_VERSION}" \
   && test -f node_modules/@foundryvtt/foundryvtt-cli/fvtt.mjs
 
-# Bundle each utility into a standalone script; the bundles carry their
-# dependencies, so the final image needs no node_modules for them.
+# The bundles carry their dependencies, so the final image needs no node_modules.
 FROM base AS build-stage
 
 WORKDIR /root
@@ -71,9 +53,7 @@ RUN bun run build
 
 FROM base AS optional-release-stage
 
-# This stage is optional and will only be executed if the FOUNDRY_RELEASE_URL or
-# FOUNDRY_USERNAME and FOUNDRY_PASSWORD secrets are provided.  It will download
-# and extract the Foundry VTT release for inclusion in the final stage.
+# Produces an empty dist/ unless credentials or FOUNDRY_RELEASE_URL are given.
 
 ARG FOUNDRY_RELEASE_URL
 ARG FOUNDRY_VERSION
@@ -124,9 +104,7 @@ LABEL org.opencontainers.image.authors="markf+github@geekpad.com"
 LABEL org.opencontainers.image.vendor="Geekpad"
 
 ENV FOUNDRY_VERSION=${FOUNDRY_VERSION}
-# The home directory keeps its historical path so existing mounts and
-# documentation stay valid.  It is owned by root and readable by the image's
-# UID 1000 (bun) user, as before.
+# Historical path, kept so existing mounts and documentation stay valid.
 ENV HOME=/home/node
 
 WORKDIR $HOME
@@ -160,18 +138,13 @@ RUN mkdir -p resources /data \
   && rm -rf /var/lib/apt/lists/* \
   && echo ${CONTAINER_VERSION} > image_version.txt
 
-# The Foundry VTT CLI, wrapped by fvtt.js which pins its configuration to a
-# writable, persistent location.  See the "Foundry VTT CLI" section of the
-# README for usage.
+# fvtt.js pins the CLI's configuration to a writable, persistent location.
 COPY --from=fvtt-cli-stage /usr/local/lib/foundryvtt-cli /usr/local/lib/foundryvtt-cli
 COPY --from=build-stage /root/dist/fvtt.js /usr/local/bin/fvtt
 
 VOLUME ["/data"]
-# HTTP Server
 EXPOSE 30000/tcp
-# TURN Server
-# Not exposing TURN ports due to bug in Docker.
-# See: https://github.com/moby/moby/issues/11185
+# TURN ports are not exposed: https://github.com/moby/moby/issues/11185
 # EXPOSE 33478/udp
 # EXPOSE 49152-65535/udp
 

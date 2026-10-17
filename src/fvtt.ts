@@ -1,20 +1,9 @@
 #!/usr/bin/env bun
 
 /**
- * Wrapper for the Foundry Virtual Tabletop CLI, installed in the image as
- * /usr/local/bin/fvtt.
- *
- * The CLI persists its configuration to ${XDG_DATA_HOME}/.fvttrc.yml
- * (~/.local/share when unset) and creates that file on every invocation, so
- * the location must be writable.  The container may run as an arbitrary UID
- * whose home directory is not writable, so default the location to the /data
- * volume, which the entrypoint guarantees is writable and which persists
- * across container recreation.  The variable is scoped to the CLI process
- * only; the Foundry server never sees it.  Set XDG_DATA_HOME to override.
- *
- * On first use, seed the configuration with this container's Foundry
- * installation and data paths so CLI commands work without any manual
- * `fvtt configure set` steps.
+ * Wrapper for the Foundry CLI.  The CLI writes ${XDG_DATA_HOME}/.fvttrc.yml
+ * on every run, and an arbitrary container UID may have no writable home, so
+ * it defaults to the /data volume.  Only the CLI sees the variable.
  */
 
 import {
@@ -35,20 +24,17 @@ export const SEED_CONFIG =
     "installPath: /home/node/resources/app\ndataPath: /data\n";
 
 /**
- * Create the configuration file if it is missing.  The file is written to a
- * temporary name and hard-linked into place, so concurrent first invocations
- * never observe a partial file and the first one to land wins.  It is left
- * writable by any UID — matching this image's /data volume conventions — so
- * a later run under a different UID can still `fvtt configure set`.
+ * Create the config if missing.  Hard-linking a temp file into place means
+ * concurrent first runs never see a partial file.  World-writable so a later
+ * run under another UID can still `fvtt configure set`.
  */
 export function seedConfig(dataHome: string): string {
     const configFile = `${dataHome}/.fvttrc.yml`;
     if (existsSync(configFile)) {
         return configFile;
     }
-    // Directories created here must stay writable by any UID a later
-    // container run may use.  Pre-existing directories (e.g. a user-supplied
-    // XDG_DATA_HOME) are never modified.
+    // New directories must stay writable by any later UID; existing ones
+    // (e.g. a user-supplied XDG_DATA_HOME) are left alone.
     const previous = process.umask(0);
     try {
         mkdirSync(dataHome, { recursive: true });

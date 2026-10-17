@@ -7,10 +7,8 @@ metadata:
   labels:
     app.kubernetes.io/name: foundryvtt
 spec:
-  # Foundry keeps live data on a single ReadWriteOnce volume, so exactly one
-  # replica may run at a time.  The "Recreate" strategy stops the old pod before
-  # starting the new one, preventing two pods from writing the same volume
-  # during a rollout.
+  # One ReadWriteOnce volume: Recreate stops the old pod before the new one
+  # starts, so two pods never write it during a rollout.
   replicas: 1
   strategy:
     type: Recreate
@@ -53,12 +51,8 @@ spec:
               value: "true"
             - name: FOUNDRY_TELEMETRY
               value: "true"
-          # Kubernetes ignores the image's built-in Docker HEALTHCHECK, so the
-          # probes are declared here against Foundry's status endpoint.  The
-          # first start downloads and installs the Foundry distribution, which
-          # can take minutes on a slow link; the startup probe budgets for
-          # that before the liveness probe takes over.  If you set
-          # FOUNDRY_ROUTE_PREFIX, prepend it to the probe paths.
+          # Kubernetes ignores Docker HEALTHCHECK.  The startup probe allows for
+          # the first-start download.  Prefix paths with FOUNDRY_ROUTE_PREFIX.
           startupProbe:
             httpGet:
               path: /api/status
@@ -97,13 +91,9 @@ spec:
             - name: config
               mountPath: /run/secrets
               readOnly: true
-            # The root filesystem is read-only, so the few paths written
-            # outside /data are backed by ephemeral emptyDir volumes.  The
-            # image ships resources/ empty and the entrypoint installs the
-            # Foundry distribution into it at startup; with the emptyDir the
-            # install is repeated from the CONTAINER_CACHE zip on every pod
-            # start.  If you build a pre-installed image, drop the resources
-            # mount so the baked-in application stays visible.
+            # Writable paths for a read-only root.  resources/ is reinstalled
+            # from the cache zip each start; drop its mount for a pre-installed
+            # image, or it hides the baked-in application.
             - name: resources
               mountPath: /home/node/resources
             - name: tmp

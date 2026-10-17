@@ -1,9 +1,6 @@
 /**
- * Prepare Foundry's configuration and launch the server.
- *
- * The server runs on Bun (`bun run --bun`) with a clean environment: only variables
- * matching ENV_VAR_PASSLIST are carried over, so credentials and keys given
- * to the container never leak into the server process.
+ * Configure and launch the server with a clean environment: only
+ * ENV_VAR_PASSLIST variables carry over, so container credentials never leak.
  */
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";

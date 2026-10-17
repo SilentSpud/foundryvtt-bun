@@ -15,28 +15,17 @@ on: # yamllint disable-line rule:truthy
       - edited
       - published
   schedule:
-    - cron: 0 10 * * * # everyday at 10am
+    - cron: 0 10 * * *
   workflow_dispatch:
 
-# Set a default shell for any run steps. The `-Eueo pipefail` sets errtrace,
-# nounset, errexit, and pipefail. The `-x` will print all commands as they are
-# run. Please see the GitHub Actions documentation for more information:
-# https://docs.github.com/en/actions/using-jobs/setting-default-values-for-jobs
+# errtrace, nounset, errexit, and pipefail; -x echoes each command.
 defaults:
   run:
     shell: bash -Eueo pipefail -x {0}
 
 concurrency:
-  # Key the group on the fully-qualified ref so each event type gets its own
-  # lane: pushes use `refs/heads/<branch>`, pull requests use
-  # `refs/pull/<n>/merge`, and the merge queue uses its own ref. Because those
-  # namespaces never overlap, a pull_request run can no longer cancel the push
-  # run for the same branch (and vice versa). That cross-event cancellation
-  # left a cancelled `CI Gate` status check on the head commit, which branch
-  # protection treated as a failing required check and refused to merge.
-  # cancel-in-progress still supersedes older runs *within* a ref (a new push
-  # or a new PR sync), which is safe because required checks are only
-  # evaluated against the latest commit SHA.
+  # The full ref keeps push, PR, and merge-queue runs from cancelling each
+  # other; a cancelled cross-event `CI Gate` counted as a failed required check.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -112,8 +101,7 @@ jobs:
       - lint
       - unit-test
       - diagnostics
-    # Skip registry-pushing jobs on fork PRs — secrets are unavailable and
-    # GITHUB_TOKEN is read-only, so pushes would fail with auth errors.
+    # Fork PRs have no secrets and a read-only GITHUB_TOKEN, so pushes would fail.
     if: |
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -124,13 +112,8 @@ jobs:
       context: .
       dockerfile: ./Dockerfile
       scan-severity: CRITICAL,HIGH
-      # GitHub code scanning only accepts SARIF tied to a branch ref or a pull
-      # request, so upload only for PRs, the merge queue, and branch refs
-      # (refs/heads/*, which also covers scheduled and dispatch runs on a
-      # branch). Skip it on release events and tag refs (refs/tags/*), where
-      # codeql-action has no branch to attach results to and fails with
-      # "GITHUB_REF ... must be set". The scan still runs; only the
-      # Security-tab upload is skipped on those refs.
+      # Code scanning rejects SARIF not tied to a branch or PR, so release and
+      # tag runs still scan but skip the upload.
       upload-scan-results: >-
         ${{ github.event_name == 'pull_request'
           || github.event_name == 'merge_group'
@@ -203,10 +186,8 @@ jobs:
 
   ci-gate:
     name: CI Gate
-    # Single aggregate status check required by branch protection. Keeping this
-    # job's NAME stable means reworking the jobs above never requires editing
-    # the ruleset again -- only this job's `needs:` list, which lives in code
-    # and is reviewed like any other change.
+    # The only check branch protection requires; keep the name stable so job
+    # changes never need a ruleset edit.
     needs:
       - config
       - lint
@@ -216,12 +197,8 @@ jobs:
       - build-preinstalled
       - test
       - test-preinstalled
-    # Run whether dependencies succeed, fail, or are skipped so the gate can
-    # evaluate their results -- but NOT when the run itself is cancelled (for
-    # example when superseded via `concurrency`). `always()` would execute
-    # even during cancellation and report a spurious failure; `!cancelled()`
-    # still runs when a dependency *fails* (failure is not cancellation), so
-    # genuine failures are caught while cancelled runs simply skip the gate.
+    # Not `always()`, which also runs on cancellation and reports a spurious
+    # failure; `!cancelled()` still runs after a dependency fails.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
@@ -232,9 +209,7 @@ jobs:
           [[ "${{ needs.lint.result }}"        == success ]] || { echo "lint: ${{ needs.lint.result }}";               exit 1; }
           [[ "${{ needs['unit-test'].result }}" == success ]] || { echo "unit-test: ${{ needs['unit-test'].result }}"; exit 1; }
           [[ "${{ needs.diagnostics.result }}" == success ]] || { echo "diagnostics: ${{ needs.diagnostics.result }}"; exit 1; }
-          # build/test jobs run on same-repo PRs but are skipped on fork PRs
-          # (no secrets are available); accept success or skipped, reject
-          # failure/cancelled:
+          # Skipped on fork PRs, which have no secrets:
           [[ "${{ needs.build.result }}"              =~ ^(success|skipped)$ ]] || { echo "build: ${{ needs.build.result }}";                           exit 1; }
           [[ "${{ needs['build-preinstalled'].result }}" =~ ^(success|skipped)$ ]] || { echo "build-preinstalled: ${{ needs['build-preinstalled'].result }}"; exit 1; }
           [[ "${{ needs.test.result }}"               =~ ^(success|skipped)$ ]] || { echo "test: ${{ needs.test.result }}";                             exit 1; }

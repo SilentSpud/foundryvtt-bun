@@ -37,6 +37,5 @@ jobs:
         if: success()
         uses: crazy-max/ghaction-github-labeler@548a7c3603594ec17c819e1239f281a3b801ab4d # tag=v6.0.0
         with:
-          # This is a hideous ternary equivalent so we only do a dry run unless
-          # this workflow is triggered by the develop branch.
+          # Ternary idiom: dry run everywhere except develop.
           dry-run: ${{ github.ref_name == 'develop' && 'false' || 'true' }}

@@ -1,17 +1,9 @@
 ---
-# Each entry in this file is a label that will be applied to pull requests
-# if there is a match based on the matching rules for the entry. Please see
-# the actions/labeler documentation for more information:
-# https://github.com/actions/labeler#match-object
-#
-# Note: Verify that the label you want to use is defined in the
-# crazy-max/ghaction-github-labeler configuration file located at
-# .github/labels.yml.
+# Every label here must also be defined in .github/labels.yml.
 
 "dependencies :game_die:":
   - changed-files:
       - any-glob-to-any-file:
-          # Add any dependency files used.
           - .pre-commit-config.yaml
           - bun.lock
           - package.json
@@ -36,14 +28,11 @@
 "shell script :shell:":
   - changed-files:
       - any-glob-to-any-file:
-          # If this project has any shell scripts that do not end in the ".sh"
-          # extension, add them below.
           - "**/*.sh"
 
 "test :test_tube:":
   - changed-files:
       - any-glob-to-any-file:
-          # Add any test-related files or paths.
           - .ansible-lint
           - .mdl_config.yaml
           - .yamllint
@@ -63,5 +52,4 @@
 "version bump :bookmark:":
   - changed-files:
       - any-glob-to-any-file:
-          # Ensure this matches your version tracking file(s).
           - src/version.txt

@@ -1,15 +1,8 @@
 #!/usr/bin/env bun
 
 /**
- * Health check for the Foundry server.
- *
- * The effective server configuration is read from options.json — the same
- * file Foundry itself reads, including changes saved through the setup UI —
- * with the environment variables as a fallback.  Deciding from environment
- * variables alone probed http against servers configured for https through
- * the UI, leaving the container permanently unhealthy (#1398).
- *
- * Exits 0 when the server answers its status endpoint, 1 otherwise.
+ * Health check.  Prefers options.json, which includes setup-UI changes, over
+ * the environment, which alone probed http against UI-set https (#1398).
  */
 
 import { readFileSync, writeFileSync } from "node:fs";

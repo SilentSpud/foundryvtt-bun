@@ -1,12 +1,9 @@
 ---
 ci:
-  # Do not commit changes from running pre-commit for pull requests.
   autofix_prs: false
-  # Autoupdate hooks weekly (this is the default).
   autoupdate_schedule: weekly
 
 repos:
-  # Check the pre-commit configuration
   - repo: meta
     hooks:
       - id: check-useless-excludes
@@ -38,7 +35,6 @@ repos:
           - --autofix
       - id: trailing-whitespace
 
-  # Text file hooks
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.49.1
     hooks:
@@ -62,37 +58,28 @@ repos:
         args:
           - --strict
 
-  # GitHub Actions hooks
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.38.2
     hooks:
       - id: check-github-actions
       - id: check-github-workflows
 
-  # pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit
     rev: v4.7.0
     hooks:
       - id: validate_manifest
 
-  # Shell script hooks
   - repo: https://github.com/scop/pre-commit-shfmt
     rev: v3.14.1-1
     hooks:
       - id: shfmt
         args:
-          # List files that will be formatted
           - --list
-          # Write result to file instead of stdout
           - --write
-          # Indent by two spaces
           - --indent
           - "2"
-          # Binary operators may start a line
           - --binary-next-line
-          # Switch cases are indented
           - --case-indent
-          # Redirect operators are followed by a space
           - --space-redirects
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1-1
@@ -101,7 +88,6 @@ repos:
         args:
           - -x
 
-  # TypeScript hooks
   - repo: local
     hooks:
       - id: typecheck
@@ -111,7 +97,6 @@ repos:
         files: (\.ts|^tsconfig\.json|^package\.json)$
         pass_filenames: false
 
-  # Docker hooks
   - repo: https://github.com/IamTheFij/docker-pre-commit
     rev: v3.0.1
     hooks:

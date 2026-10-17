@@ -28,7 +28,6 @@ services:
       - target: 80
         published: 80
         protocol: tcp
-      # HTTPS.
       - target: 443
         published: 443
         protocol: tcp
@@ -46,8 +45,7 @@ services:
     restart: unless-stopped
 
 networks:
-  # A private bridge shared by the two services.  Deliberately not
-  # `internal: true`: Foundry needs outbound access to download releases.
+  # Not `internal: true`: Foundry needs outbound access to download releases.
   backend:
 
 secrets:

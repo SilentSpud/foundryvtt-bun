@@ -1,17 +1,7 @@
 /**
- * Exponential backoff between failed container starts.
- *
- * A container that fails during startup is restarted by its runtime, which
- * can turn a persistent problem (bad credentials, a full disk) into a rapid
- * restart loop that hammers foundryvtt.com.  The failure count is persisted
- * in ${CONTAINER_CACHE}/backoff_state.json so the delay grows across
- * restarts:
- *
- *   delay(n) = 0 for the first failure, then min(10 * 2^(n-2), 960) seconds
- *
- * Failures further apart than BACKOFF_DECAY_SECONDS (default 3600) are not a
- * restart loop: the count restarts at 1 instead of continuing to grow, so a
- * container that crashes rarely is not punished with the maximum delay.
+ * Backoff between failed starts, so a restart loop cannot hammer
+ * foundryvtt.com.  The count persists in the cache across restarts and resets
+ * when failures are BACKOFF_DECAY_SECONDS apart, so rare crashes stay cheap.
  */
 
 import {
@@ -116,15 +106,9 @@ export function backoffReset(env: Env, logger: Logger): void {
 }
 
 /**
- * Apply backoff for a failed run and return the exit code to use.
- *
- *   Kubernetes (KUBERNETES_SERVICE_HOST set): return immediately —
- *     CrashLoopBackOff already throttles restarts.
- *   No usable cache directory: sleep until SIGTERM, then return 0 (a clean
- *     operator-initiated shutdown).  Without persisted state there is no
- *     other way to slow a restart loop.
- *   Otherwise: record the failure, sleep the computed delay (cut short by
- *     SIGTERM), and return the original exit code.
+ * Apply backoff for a failed run and return the exit code to use.  Skipped on
+ * Kubernetes, where CrashLoopBackOff already throttles.  Without a cache to
+ * persist state, sleeping until SIGTERM is the only way to slow a loop.
  */
 export async function backoffOnFailure(
     exitCode: number,
@@ -226,9 +210,8 @@ export async function backoffOnFailure(
             .replace(/\.\d{3}Z$/, "Z"),
         last_failure_epoch: nowSeconds,
     };
-    // Write atomically.  If that fails (disk full, read-only volume), fall
-    // back to the indefinite sleep so a broken write cannot silently degrade
-    // into a rapid restart loop.
+    // A failed write (disk full, read-only volume) falls back to the
+    // indefinite sleep, or it would silently become a rapid restart loop.
     const tmpFile = `${stateFile}.tmp`;
     try {
         writeFileSync(tmpFile, JSON.stringify(state) + "\n");

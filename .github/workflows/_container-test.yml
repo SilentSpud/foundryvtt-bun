@@ -1,10 +1,8 @@
 ---
 name: Test container image
 
-# Tests a container image by pulling it from the registry using the digest
-# reference resolved from the per-platform digest artifacts uploaded by the
-# container-build workflow, so the tested image is identical to what will be
-# published.  The tests are written in TypeScript and run with `bun test`.
+# Pulls by the digest the build uploaded, so the tested image is exactly the
+# one that gets published.
 
 permissions: {}
 

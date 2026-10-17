@@ -1,13 +1,9 @@
 #!/usr/bin/env bun
 
 /**
- * Container entrypoint: install (or reuse) the requested Foundry Virtual
- * Tabletop release, apply licensing and patches, then run the server.
- *
- * Every non-zero exit is routed through the backoff logic (see backoff.ts) so
- * that persistent failures — bad credentials, a full disk, a wrong release
- * file — cannot become a rapid restart loop.  A SIGTERM-initiated shutdown is
- * treated as clean.
+ * Container entrypoint.  Every non-zero exit goes through backoff.ts so
+ * persistent failures (bad credentials, a full disk) cannot become a rapid
+ * restart loop.
  */
 
 import { spawnSync } from "node:child_process";
@@ -96,8 +92,7 @@ function onSigterm(): void {
     // Interrupts any in-progress backoff sleep.
     terminate.abort();
     if (phase === "setup") {
-        // Nothing to hand the signal to: stop now, and never hold the
-        // download lock into the grave.
+        // No child to forward the signal to, so stop now and free the lock.
         log.warn("TERM received before child process was started.");
         lock.release();
         process.exit(143);
@@ -187,7 +182,6 @@ function applySecrets(): void {
     }
 }
 
-/** The installed release's version, or undefined when nothing is installed. */
 function installedVersion(): string | undefined {
     if (!isFile(INSTALLED_PACKAGE)) {
         return undefined;
@@ -209,11 +203,9 @@ function installedVersion(): string | undefined {
 }
 
 /**
- * Fail hard when the archive's contents do not match FOUNDRY_VERSION.  The
- * release endpoint is keyed on build number alone, so requesting a
- * nonexistent generation yields a different generation's release (#1051);
- * without this check the mislabeled file poisons the cache and reinstalls on
- * every start.  An undeterminable version is a warning, never a failure.
+ * The release endpoint keys on build number alone, so a nonexistent
+ * generation yields another generation's release (#1051), which would poison
+ * the cache.  An undeterminable version only warns.
  */
 function verifyReleaseFile(file: string, foundryVersion: string): void {
     const found = releaseArchiveVersion(file);
@@ -251,11 +243,7 @@ function writeCacheTag(cacheDir: string): void {
     );
 }
 
-/**
- * Remove in-progress files older than the stall window: their downloaders
- * are gone, and an active file's mtime keeps advancing so it can never
- * qualify.  Never sweeps more aggressively than the 5-minute default window.
- */
+/** An active download's mtime keeps advancing, so a stalled one is orphaned. */
 function sweepStaleDownloads(cacheRoot: string, foundryVersion: string): void {
     const { pollSeconds, stallTicks } = lock.tunables;
     const minutes = Math.max(
@@ -296,11 +284,7 @@ async function unzip(args: string[]): Promise<void> {
     }
 }
 
-/**
- * Run a user patch script with bash.  The script runs with errexit, nounset,
- * and pipefail, and with the log helpers from logging.sh available, as it
- * did when the entrypoint was a shell script.  A failing patch is fatal.
- */
+/** Matches the environment patches had when the entrypoint was a shell script. */
 async function runPatch(file: string): Promise<void> {
     const status = await runChild(
         [
@@ -330,9 +314,8 @@ async function applyPatches(userAgent: string): Promise<void> {
             log.info(`Downloading patch from URL: ${url}`);
             const dir = mkdtempSync(`${tmpdir()}/patch_url.`);
             const patchFile = `${dir}/patch.sh`;
-            // An HTTP error body (a 404 page, a proxy error) must never be
-            // run.  A 200 response is still trusted, as the warning states;
-            // HTTPS URLs keep interposers such as captive portals out.
+            // download() rejects HTTP errors so an error page is never run.
+            // A 200 body is still trusted, as the warning states.
             try {
                 await download(url, patchFile, {
                     userAgent,
@@ -408,11 +391,9 @@ async function install(
             ? cacheRoot
             : `${cacheRoot}/`
         : "";
-    // The in-progress name is version-unique so instances downloading
-    // different versions into a shared cache cannot clobber each other and
-    // mislabel a release, and instance-unique so a presumed-dead downloader
-    // that resumes can only ever rename its own (complete) file into place.
-    // It must not match the foundryvtt-*.zip pattern used by cache pruning.
+    // Version-unique so instances sharing a cache cannot mislabel releases;
+    // instance-unique so a resumed "dead" downloader renames only its own
+    // file.  Must not match the foundryvtt-*.zip pruning pattern.
     const downloadingGlob = `${prefix}downloading-${foundryVersion}.*.zip`;
     const downloadingFile = `${prefix}downloading-${foundryVersion}.${env.HOSTNAME || "unknown"}-${process.pid}.zip`;
     const releaseFile = `${prefix}foundryvtt-${foundryVersion}.zip`;
@@ -425,11 +406,8 @@ async function install(
 
     let fetchReleaseUrl = false;
     if (env.FOUNDRY_USERNAME && env.FOUNDRY_PASSWORD) {
-        // Authentication serves two purposes: fetching a presigned release
-        // URL and fetching a license key.  When the requested release is
-        // already cached and licensing is settled, neither is needed — skip
-        // the account round-trips so simultaneous start-ups sharing a cache
-        // do not get rate-limited by foundryvtt.com (#1399).
+        // Login is only for the release URL and license key.  Skipping it
+        // when neither is needed avoids rate limits on shared caches (#1399).
         const licenseKey = env.FOUNDRY_LICENSE_KEY ?? "";
         if (
             isFile(releaseFile) &&
@@ -460,18 +438,15 @@ async function install(
                 log.warn("Authentication failed.");
             }
             if (session && !presignedUrl && !isFile(releaseFile)) {
-                // A release URL is needed, but fetching it is deferred until
-                // the download slot is held so only one instance hits the
-                // rate-limited endpoint (#1399).
+                // Deferred until the download slot is held, so only one
+                // instance hits the rate-limited endpoint (#1399).
                 fetchReleaseUrl = true;
             }
         }
     }
 
-    // Arbitrate the download between instances sharing the cache, but only
-    // when the release is actually missing: a FOUNDRY_RELEASE_URL freshness
-    // re-download over an existing cached file stays unguarded (concurrent
-    // complete downloads rename atomically and are benign).
+    // A FOUNDRY_RELEASE_URL re-download over a cached file stays unguarded:
+    // concurrent complete downloads rename atomically and are benign.
     let slot = SlotState.Unarbitrated;
     if (
         cacheRoot &&
@@ -527,9 +502,8 @@ async function install(
 
     if (presignedUrl && slot !== SlotState.Cached) {
         log.info("Downloading Foundry Virtual Tabletop release.");
-        // Remove any stale in-progress file left by an interrupted run.  On a
-        // not-modified cache hit nothing is written, and the rename below
-        // would otherwise move the stale partial over the good release.
+        // A not-modified hit writes nothing, so the rename below would move
+        // an interrupted run's partial over the good release.
         rmSync(downloadingFile, { force: true });
         if (cacheRoot) {
             sweepStaleDownloads(cacheRoot, foundryVersion);
@@ -560,14 +534,12 @@ async function install(
             }
         }
         if (downloaded && isFile(downloadingFile)) {
-            // Verify a fresh download before it is renamed into the cache,
-            // so a wrong-version archive never lands under the requested
-            // version's name.
+            // Verify before the rename so a wrong version never enters the cache.
             verifyReleaseFile(downloadingFile, foundryVersion);
             try {
                 renameSync(downloadingFile, releaseFile);
             } catch {
-                // ignore, as the release file check below decides
+                // the release file check below decides
             }
         }
     }

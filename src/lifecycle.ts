@@ -24,11 +24,8 @@ export interface RunChildOptions {
     cwd?: string;
     logger?: Logger;
     /**
-     * Signals forwarded to the child while it runs.  The entrypoint runs as
-     * PID 1, so returning early would end the container and make the runtime
-     * SIGKILL the child mid-shutdown (e.g. Foundry flushing world data after
-     * a forwarded SIGTERM): the returned promise settles only once the child
-     * has really terminated.
+     * Signals forwarded to the child.  Settles only once the child exits: as
+     * PID 1, returning early would get it SIGKILLed mid-shutdown.
      */
     forward?: NodeJS.Signals[];
     /** Signals received but not forwarded (the child gets them itself). */

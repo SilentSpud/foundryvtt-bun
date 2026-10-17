@@ -1,10 +1,7 @@
 /**
- * Tests against the built image (IMAGE_TAG, default local/test-image:latest).
- *
- * Most tests run without credentials: a fake release archive in the cache
- * drives the whole startup path (verify, install, patch, configure, launch,
- * health check, shutdown).  When FOUNDRY_USERNAME and FOUNDRY_PASSWORD are
- * set, the real release is also downloaded and started.
+ * Tests against the built image.  A fake cached release drives the full
+ * startup path without credentials; with FOUNDRY_USERNAME and
+ * FOUNDRY_PASSWORD set, the real release is downloaded too.
  */
 
 import { afterAll, describe, expect, test } from "bun:test";
@@ -157,7 +154,6 @@ describe("fake release", () => {
         });
         await waitForLog(name, (logs) => logs.includes(READY_MESSAGE));
 
-        // Configuration files.
         const options = JSON.parse(
             readFileSync(`${data}/Config/options.json`, "utf8"),
         );
@@ -173,7 +169,6 @@ describe("fake release", () => {
         });
         expect(existsSync(`${data}/container_cache/CACHEDIR.TAG`)).toBe(true);
 
-        // The server runs with a clean environment and the generated flags.
         const server = JSON.parse(
             readFileSync(`${data}/server-env.json`, "utf8"),
         );
@@ -184,10 +179,8 @@ describe("fake release", () => {
         expect(server.env.FOUNDRY_PASSWORD).toBeUndefined();
         expect(server.env.FOUNDRY_ADMIN_KEY).toBeUndefined();
         expect(server.argv).toContain("--noipdiscovery");
-        // Foundry runs on Bun.
         expect(server.bun).toBeString();
 
-        // The language file was patched inside the container.
         const lang = await docker(
             "exec",
             name,

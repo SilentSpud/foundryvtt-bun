@@ -30,11 +30,9 @@ function clampEnv(
 }
 
 /**
- * A truthy flag word selects the AWS SDK's ambient credential evaluation
- * (env vars, instance/task roles); a falsy one disables it; any other
- * non-empty value is a path to an awsConfig.json.  Passing the literal string
- * through (#309) made Foundry look for a file named "true", and a config file
- * cannot be named after a bare flag word.
+ * Truthy selects the AWS SDK's ambient credentials, falsy disables it, and
+ * anything else is an awsConfig.json path.  Passing the word through made
+ * Foundry look for a file named "true" (#309).
  */
 function awsConfig(raw: string | undefined): boolean | string | null {
     if (raw === undefined || raw === "") {

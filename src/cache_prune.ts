@@ -1,15 +1,6 @@
 /**
- * Cache eviction for downloaded release archives.
- *
- * Archives beyond the keep count are deleted, keeping the most recently
- * *used* ones.  An archive's mtime records its last use: downloads set it,
- * and the entrypoint touches the archive each time a container installs from
- * it.  Evicting by use instead of by version number keeps an older major's
- * release alive in a shared cache as long as some instance still installs it
- * (#1266).
- *
- * Only files matching foundryvtt-*.zip are ever considered: in-progress
- * downloads, lock directories, and state files are never touched.
+ * Evict release archives by last use (mtime, touched on every install), not by
+ * version, so an older major survives while any instance installs it (#1266).
  */
 
 import { readdirSync, rmSync, statSync } from "node:fs";
