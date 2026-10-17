@@ -281,9 +281,9 @@ describe("Foundry VTT CLI", () => {
                 return result.stdout.trim();
             },
         );
-    const cliVersion = /^ARG FOUNDRYVTT_CLI_VERSION=(\S+)$/m.exec(
-        readFileSync("Dockerfile", "utf8"),
-    )?.[1];
+    const cliVersion: string | undefined = JSON.parse(
+        readFileSync("docker/fvtt-cli/package.json", "utf8"),
+    ).dependencies?.["@foundryvtt/foundryvtt-cli"];
 
     test("reports the pinned version", async () => {
         expect(cliVersion).toBeDefined();

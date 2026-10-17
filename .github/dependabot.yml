@@ -2,8 +2,11 @@
 version: 2
 
 updates:
+  # The root Dockerfile plus image tags in the Kubernetes manifests.
   - package-ecosystem: docker
-    directory: /
+    directories:
+      - /
+      - /docs/deployment/kubernetes/manifests
     schedule:
       interval: daily
     labels:
@@ -17,7 +20,11 @@ updates:
           - "*"
 
   - package-ecosystem: docker-compose
-    directory: /
+    directories:
+      - /
+      - /docs/deployment/cloudflare-tunnel
+      - /docs/deployment/reverse-proxy-caddy
+      - /docs/deployment/reverse-proxy-nginx
     schedule:
       interval: daily
     labels:
@@ -44,8 +51,11 @@ updates:
         patterns:
           - "*"
 
+  # The project itself and the Foundry VTT CLI installed into the image.
   - package-ecosystem: bun
-    directory: /
+    directories:
+      - /
+      - /docker/fvtt-cli
     schedule:
       interval: daily
     labels:

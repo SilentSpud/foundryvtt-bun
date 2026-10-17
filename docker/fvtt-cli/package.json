@@ -1,0 +1,8 @@
+{
+  "name": "foundryvtt-cli-install",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@foundryvtt/foundryvtt-cli": "3.0.5"
+  }
+}

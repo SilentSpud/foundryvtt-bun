@@ -1,0 +1,80 @@
+---
+name: Foundry release check
+
+on:
+  schedule:
+    - cron: 17 9 * * *
+  workflow_dispatch:
+
+# errtrace, nounset, errexit, and pipefail; -x echoes each command.
+defaults:
+  run:
+    shell: bash -Eueo pipefail -x {0}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Check for a new Foundry release
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LABEL: "foundry release :tada:"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+
+      # Foundry publishes releases as milestones titled "V14 Stable 11 - 14.369".
+      - name: Find the latest stable release
+        id: versions
+        run: |
+          current=$(jq -r '.version | split(".")[0:2] | join(".")' package.json)
+          latest=$(gh api \
+            'repos/foundryvtt/foundryvtt/milestones?state=closed&per_page=100&sort=due_on&direction=desc' \
+            --jq '.[] | select(.title | contains("Stable")) | .title
+                  | capture("- (?<v>[0-9]+[.][0-9]+)$") | .v' \
+            | sort -V | tail -n 1)
+          echo "current=${current}" >> "$GITHUB_OUTPUT"
+          echo "latest=${latest}" >> "$GITHUB_OUTPUT"
+
+      - name: Open an issue for a newer release
+        env:
+          CURRENT: ${{ steps.versions.outputs.current }}
+          LATEST: ${{ steps.versions.outputs.latest }}
+        run: |
+          newest=$(printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | tail -n 1)
+          if [[ -z "$LATEST" || "$LATEST" == "$CURRENT" || "$newest" != "$LATEST" ]]; then
+            echo "Up to date with Foundry ${CURRENT}."
+            exit 0
+          fi
+          title="Foundry VTT ${LATEST} is available"
+          if gh issue list --state open --label "$LABEL" --json title --jq '.[].title' \
+            | grep -qxF "$title"; then
+            echo "An issue for ${LATEST} is already open."
+            exit 0
+          fi
+          note=""
+          if [[ "${LATEST%%.*}" != "${CURRENT%%.*}" ]]; then
+            note=$'\n> [!WARNING]\n> This is a new major version, which usually needs container changes.\n'
+          fi
+          body="Foundry VTT [${LATEST}](https://foundryvtt.com/releases/${LATEST}) has been released; this repository is on ${CURRENT}.
+          ${note}
+          To update, run \`bun run release ${LATEST}.0\`, then open a pull request.
+          This issue closes once the version in \`package.json\` reaches ${LATEST}."
+          gh label create "$LABEL" --color 0e8a16 \
+            --description "A new Foundry VTT release is available" 2> /dev/null || true
+          gh issue create --title "$title" --label "$LABEL" --body "$body"
+
+      - name: Close issues for releases already adopted
+        env:
+          CURRENT: ${{ steps.versions.outputs.current }}
+        run: |
+          gh issue list --state open --label "$LABEL" --json number,title \
+            --jq '.[] | "\(.number) \(.title)"' \
+            | while read -r number _ _ version _; do
+              if [[ "$(printf '%s\n%s\n' "$version" "$CURRENT" | sort -V | tail -n 1)" == "$CURRENT" ]]; then
+                gh issue close "$number" --comment "The repository is now on Foundry ${CURRENT}."
+              fi
+            done

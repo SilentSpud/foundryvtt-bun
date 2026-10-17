@@ -5,7 +5,6 @@ ARG FOUNDRY_RELEASE_URL
 ARG FOUNDRY_VERSION
 # Must match the Debian release the Bun image in patched-base is built on.
 ARG DEBIAN_SUITE=trixie
-ARG FOUNDRYVTT_CLI_VERSION=3.0.5
 
 # BuildKit revalidates remote ADDs every build, so patched-base rebuilds exactly
 # when the security archives are republished instead of caching its upgrade
@@ -27,13 +26,12 @@ RUN --mount=type=bind,from=archive-state,target=/run/archive-state \
 FROM patched-base AS base
 
 # yargs reports the version of the nearest package.json, which is this
-# install manifest, so the manifest carries the CLI's version.
+# install manifest, so stamp the CLI's version into it.
 FROM base AS fvtt-cli-stage
-ARG FOUNDRYVTT_CLI_VERSION
 WORKDIR /usr/local/lib/foundryvtt-cli
-RUN printf '{"name":"foundryvtt-cli-install","private":true,"version":"%s"}\n' \
-  "${FOUNDRYVTT_CLI_VERSION}" > package.json \
-  && bun add --exact --production "@foundryvtt/foundryvtt-cli@${FOUNDRYVTT_CLI_VERSION}" \
+COPY docker/fvtt-cli/package.json docker/fvtt-cli/bun.lock ./
+RUN bun install --frozen-lockfile --production \
+  && bun pm pkg set "version=$(bun -p 'require("@foundryvtt/foundryvtt-cli/package.json").version')" \
   && test -f node_modules/@foundryvtt/foundryvtt-cli/fvtt.mjs
 
 # The bundles carry their dependencies, so the final image needs no node_modules.
