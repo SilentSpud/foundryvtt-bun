@@ -61,7 +61,12 @@ export function incrementString(value: string): string {
 }
 
 export type BumpPart =
-    "major" | "minor" | "patch" | "prerelease" | "build" | "finalize";
+    | "major"
+    | "minor"
+    | "patch"
+    | "prerelease"
+    | "build"
+    | "finalize";
 
 export function bump(version: string, part: BumpPart, token?: string): string {
     const v = parse(version);

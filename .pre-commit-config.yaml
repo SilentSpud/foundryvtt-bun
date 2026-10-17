@@ -45,16 +45,24 @@ repos:
       - id: markdownlint
         args:
           - --config=.mdl_config.yaml
-  # Prettier runs from the project dependencies so the hook and
-  # `bun run format` always agree on the version.
+  # oxfmt and oxlint run from the project dependencies so the hooks and
+  # `bun run format` / `bun run lint` always agree on the version.
   - repo: local
     hooks:
-      - id: prettier
-        name: prettier
+      - id: oxfmt
+        name: oxfmt
         language: system
-        entry: bun x prettier --write --ignore-unknown
-        types:
-          - text
+        entry: bun x oxfmt --no-error-on-unmatched-pattern
+        types_or:
+          - javascript
+          - ts
+      - id: oxlint
+        name: oxlint
+        language: system
+        entry: bun x oxlint
+        types_or:
+          - javascript
+          - ts
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.38.0
     hooks:
@@ -107,7 +115,7 @@ repos:
       - id: typecheck
         name: typecheck
         language: system
-        entry: bun run typecheck
+        entry: bun check
         files: (\.ts|^tsconfig\.json|^package\.json)$
         pass_filenames: false
 
