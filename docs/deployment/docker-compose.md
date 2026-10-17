@@ -1,165 +1,165 @@
-# Deploying with Docker Compose #
+# Deploying with Docker Compose
 
 [Docker Compose] is the simplest way to run a single Foundry Virtual Tabletop
-instance on one host.  A `compose.yaml` file captures the image, configuration,
+instance on one host. A `compose.yaml` file captures the image, configuration,
 storage, and ports in one place, so the server is easy to start, stop, and
 reproduce.
 
-This guide covers a complete single-host deployment.  For the full catalog of
+This guide covers a complete single-host deployment. For the full catalog of
 settings, see the [environment variables] and [secrets] sections of the project
 README.
 
-## Prerequisites ##
+## Prerequisites
 
-- [Docker Engine] with the Compose plugin (the `docker compose` command).  Any
+- [Docker Engine] with the Compose plugin (the `docker compose` command). Any
   runtime that understands Compose files works too; Podman users should read the
   [Podman guide](podman.md).
 - A [foundryvtt.com] account with a purchased software license.
 
 > [!NOTE]
 > These examples use the `docker` command line, which also drives other
-> drop-in backends such as [Colima] or [Rancher Desktop].  Use whichever you
+> drop-in backends such as [Colima] or [Rancher Desktop]. Use whichever you
 > prefer; the commands are the same.
 
-## Deploy ##
+## Deploy
 
-1. Create a `compose.yaml` file.  Supply your credentials as the values of the
+1. Create a `compose.yaml` file. Supply your credentials as the values of the
    environment variables:
 
-    ```yaml
-    ---
-    services:
-      foundry:
-        image: ghcr.io/felddy/foundryvtt:14
-        hostname: my_foundry_host
-        environment:
-          - FOUNDRY_USERNAME=<your_username>
-          - FOUNDRY_PASSWORD=<your_password>
-          - FOUNDRY_ADMIN_KEY=<your_admin_key>
-          - FOUNDRY_TELEMETRY=true
-        volumes:
-          - type: bind
-            source: ./data
-            target: /data
-        ports:
-          - target: 30000
-            published: 30000
-            protocol: tcp
-        restart: unless-stopped
-    ```
+   ```yaml
+   ---
+   services:
+     foundry:
+       image: ghcr.io/felddy/foundryvtt:14
+       hostname: my_foundry_host
+       environment:
+         - FOUNDRY_USERNAME=<your_username>
+         - FOUNDRY_PASSWORD=<your_password>
+         - FOUNDRY_ADMIN_KEY=<your_admin_key>
+         - FOUNDRY_TELEMETRY=true
+       volumes:
+         - type: bind
+           source: ./data
+           target: /data
+       ports:
+         - target: 30000
+           published: 30000
+           protocol: tcp
+       restart: unless-stopped
+   ```
 
 1. Start the server and detach:
 
-    ```console
-    docker compose up --detach
-    ```
+   ```console
+   docker compose up --detach
+   ```
 
-1. Open [http://localhost:30000](http://localhost:30000).  You should be
+1. Open [http://localhost:30000](http://localhost:30000). You should be
    prompted to accept the license agreement, then for the admin access key you
    set in `FOUNDRY_ADMIN_KEY`.
 
 > [!IMPORTANT]
-> Always set a stable `hostname`.  Foundry binds its software license to the
-> container hostname.  Without one, the runtime assigns a random container ID on
+> Always set a stable `hostname`. Foundry binds its software license to the
+> container hostname. Without one, the runtime assigns a random container ID on
 > each start and license verification fails after every restart.
 
-## How it works ##
+## How it works
 
-[Configuration options] are supplied as [environment variables].  Each time the
+[Configuration options] are supplied as [environment variables]. Each time the
 container starts, it regenerates Foundry's configuration files from those
-variables.  This means **changes made in the in-application configuration GUI do
+variables. This means **changes made in the in-application configuration GUI do
 not persist across restarts** — manage configuration through `compose.yaml`
-instead.  To preserve hand-edited configuration files, set
+instead. To preserve hand-edited configuration files, set
 `CONTAINER_PRESERVE_CONFIG` to `true`.
 
-## Using a `.env` file ##
+## Using a `.env` file
 
 To keep credentials out of `compose.yaml`, put them in a `.env` file next to
-it and reference them from the `environment` section.  Compose reads `.env`
+it and reference them from the `environment` section. Compose reads `.env`
 automatically for [variable substitution]; only the variables you reference
 reach the container.
 
 1. Create `.env` (and keep it out of version control):
 
-    ```dotenv
-    FOUNDRY_USERNAME=<your_username>
-    FOUNDRY_PASSWORD=<your_password>
-    FOUNDRY_ADMIN_KEY=<your_admin_key>
-    ```
+   ```dotenv
+   FOUNDRY_USERNAME=<your_username>
+   FOUNDRY_PASSWORD=<your_password>
+   FOUNDRY_ADMIN_KEY=<your_admin_key>
+   ```
 
 1. Reference the variables from `compose.yaml`:
 
-    ```yaml
-    ---
-    services:
-      foundry:
-        image: ghcr.io/felddy/foundryvtt:14
-        hostname: my_foundry_host
-        environment:
-          - FOUNDRY_USERNAME=${FOUNDRY_USERNAME:-}
-          - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD:-}
-          - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY:-}
-          - FOUNDRY_TELEMETRY=true
-        volumes:
-          - type: bind
-            source: ./data
-            target: /data
-        ports:
-          - target: 30000
-            published: 30000
-            protocol: tcp
-        restart: unless-stopped
-    ```
+   ```yaml
+   ---
+   services:
+     foundry:
+       image: ghcr.io/felddy/foundryvtt:14
+       hostname: my_foundry_host
+       environment:
+         - FOUNDRY_USERNAME=${FOUNDRY_USERNAME:-}
+         - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD:-}
+         - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY:-}
+         - FOUNDRY_TELEMETRY=true
+       volumes:
+         - type: bind
+           source: ./data
+           target: /data
+       ports:
+         - target: 30000
+           published: 30000
+           protocol: tcp
+       restart: unless-stopped
+   ```
 
 Variables set in your shell take precedence over the `.env` file.
 
-## Using secrets ##
+## Using secrets
 
 Sensitive values can be passed as a secret file instead of environment
-variables.  The file may have any name, but it must be mounted to `config.json`
-inside the container.  See the [secrets] reference for every supported key.
+variables. The file may have any name, but it must be mounted to `config.json`
+inside the container. See the [secrets] reference for every supported key.
 
 1. Create a `secrets.json` file with the values you want to set:
 
-    ```json
-    {
-      "foundry_admin_key": "<your_admin_key>",
-      "foundry_password": "<your_password>",
-      "foundry_username": "<your_username>"
-    }
-    ```
+   ```json
+   {
+     "foundry_admin_key": "<your_admin_key>",
+     "foundry_password": "<your_password>",
+     "foundry_username": "<your_username>"
+   }
+   ```
 
 1. Reference it from `compose.yaml` and drop the matching environment variables:
 
-    ```yaml
-    ---
-    secrets:
-      config_json:
-        file: secrets.json
+   ```yaml
+   ---
+   secrets:
+     config_json:
+       file: secrets.json
 
-    services:
-      foundry:
-        image: ghcr.io/felddy/foundryvtt:14
-        hostname: my_foundry_host
-        environment:
-          - FOUNDRY_TELEMETRY=true
-        volumes:
-          - type: bind
-            source: ./data
-            target: /data
-        ports:
-          - target: 30000
-            published: 30000
-            protocol: tcp
-        secrets:
-          - source: config_json
-            target: config.json
-        restart: unless-stopped
-    ```
+   services:
+     foundry:
+       image: ghcr.io/felddy/foundryvtt:14
+       hostname: my_foundry_host
+       environment:
+         - FOUNDRY_TELEMETRY=true
+       volumes:
+         - type: bind
+           source: ./data
+           target: /data
+       ports:
+         - target: 30000
+           published: 30000
+           protocol: tcp
+       secrets:
+         - source: config_json
+           target: config.json
+       restart: unless-stopped
+   ```
 
-## Updating ##
+## Updating
 
-The in-application "Update Software" tab is disabled in this image.  To move
+The in-application "Update Software" tab is disabled in this image. To move
 to a newer release, pull a fresh image and recreate the container:
 
 ```console
@@ -168,10 +168,10 @@ docker compose up --detach
 ```
 
 Because the image is pinned to the major tag `:14`, `pull`
-fetches the newest release that is compatible with your existing data.  To move
+fetches the newest release that is compatible with your existing data. To move
 to a new major version, change the tag in `compose.yaml` first, then pull.
 
-## Next steps ##
+## Next steps
 
 - Add automatic HTTPS with the
   [Caddy reverse proxy recipe](reverse-proxy-caddy/README.md).

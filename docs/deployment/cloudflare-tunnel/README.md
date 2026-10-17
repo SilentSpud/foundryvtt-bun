@@ -1,16 +1,16 @@
-# Foundry VTT behind a Cloudflare Tunnel #
+# Foundry VTT behind a Cloudflare Tunnel
 
-This recipe exposes Foundry to the internet through a [Cloudflare Tunnel].  An
+This recipe exposes Foundry to the internet through a [Cloudflare Tunnel]. An
 outbound-only `cloudflared` connection means there is no port forwarding or NAT
 to configure, and TLS is handled at Cloudflare's edge.
 
-## Notable features ##
+## Notable features
 
 - No inbound ports, port forwarding, or NAT rules required.
 - TLS and caching provided by Cloudflare; certificates are managed for you.
 - Foundry data persists on disk.
 
-## Diagram ##
+## Diagram
 
 ```mermaid
 graph LR
@@ -27,11 +27,11 @@ graph LR
 ```
 
 > [!NOTE]
-> Running on Kubernetes?  The [Kubernetes guide](../kubernetes/README.md#publish-through-a-cloudflare-tunnel)
+> Running on Kubernetes? The [Kubernetes guide](../kubernetes/README.md#publish-through-a-cloudflare-tunnel)
 > shows the tunnel as a Gateway API implementation instead — no `cloudflared`
 > service to manage yourself.
 
-## Prerequisites ##
+## Prerequisites
 
 - A host with [Docker Compose](../docker-compose.md) (or
   [Podman](../podman.md)).
@@ -39,23 +39,23 @@ graph LR
 - The [`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
   CLI installed locally to create the tunnel.
 
-## Deploy ##
+## Deploy
 
 1. Create the following layout using the
    [`compose.yaml`](compose.yaml), [`foundry_secrets.json`](foundry_secrets.json),
    and [`volumes/cloudflare_config/config.yml`](volumes/cloudflare_config/config.yml)
    files from this directory:
 
-    ```console
-    .
-    ├── compose.yaml
-    ├── foundry_secrets.json
-    └── volumes/
-        ├── cloudflare_config/
-        │   ├── config.yml
-        │   └── tunnel_creds.json   (created below)
-        └── foundry_data/
-    ```
+   ```console
+   .
+   ├── compose.yaml
+   ├── foundry_secrets.json
+   └── volumes/
+       ├── cloudflare_config/
+       │   ├── config.yml
+       │   └── tunnel_creds.json   (created below)
+       └── foundry_data/
+   ```
 
 1. Edit `compose.yaml` and `foundry_secrets.json`, replacing the `< >`
    placeholders with your domain and [foundryvtt.com](https://foundryvtt.com)
@@ -63,16 +63,16 @@ graph LR
 
 1. Log in to Cloudflare:
 
-    ```console
-    cloudflared tunnel login
-    ```
+   ```console
+   cloudflared tunnel login
+   ```
 
-1. Create a tunnel.  You can replace `vtt` with any name:
+1. Create a tunnel. You can replace `vtt` with any name:
 
-    ```console
-    cloudflared tunnel create \
-      --credentials-file ./volumes/cloudflare_config/tunnel_creds.json vtt
-    ```
+   ```console
+   cloudflared tunnel create \
+     --credentials-file ./volumes/cloudflare_config/tunnel_creds.json vtt
+   ```
 
    Note the tunnel ID printed in the output.
 
@@ -82,20 +82,20 @@ graph LR
 
 1. Route DNS for that hostname to the tunnel:
 
-    ```console
-    cloudflared tunnel route dns vtt vtt.example.com
-    ```
+   ```console
+   cloudflared tunnel route dns vtt vtt.example.com
+   ```
 
 1. Start the services and detach:
 
-    ```console
-    docker compose up --detach
-    ```
+   ```console
+   docker compose up --detach
+   ```
 
 1. Foundry is now reachable at your hostname, for example
    `https://vtt.example.com`.
 
-## How it works ##
+## How it works
 
 - `cloudflared` makes an outbound-only connection to Cloudflare's edge, so no
   inbound port ever opens on the host.
@@ -106,7 +106,7 @@ graph LR
   restarts.
 
 > [!IMPORTANT]
-> `tunnel_creds.json` grants control of your tunnel — keep it secret.  This
+> `tunnel_creds.json` grants control of your tunnel — keep it secret. This
 > recipe's `.gitignore` already excludes it from version control.
 
 [Cloudflare Tunnel]: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/

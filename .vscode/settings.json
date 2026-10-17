@@ -1,7 +1,5 @@
 {
-  "cSpell.ignoreRegExpList": [
-  "[0-9a-fA-F]{6}\\b"
-  ],
+  "cSpell.ignoreRegExpList": ["[0-9a-fA-F]{6}\\b"],
   "cSpell.words": [
     "Autobuild",
     "automerge",
@@ -12,7 +10,6 @@
     "getuid",
     "ghaction",
     "healthcheck",
-    "markdownlint",
     "noipdiscovery",
     "noupdate",
     "octocat",
@@ -22,12 +19,9 @@
     "pipefail",
     "pypi",
     "pythonhosted",
-    "Qapla",
     "redactions",
     "sarif",
     "scifi",
-    "shellcheck",
-    "shfmt",
     "trixie",
     "tzdata",
     "wontfix"

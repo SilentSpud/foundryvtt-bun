@@ -1,13 +1,13 @@
-# Deploying on Kubernetes #
+# Deploying on Kubernetes
 
 This guide runs Foundry Virtual Tabletop on a Kubernetes cluster using a small
-set of plain manifests.  They are intentionally generic — no specific gateway
+set of plain manifests. They are intentionally generic — no specific gateway
 controller, storage provider, or secrets tooling is assumed — so you can adapt
 them to your environment.
 
 The deployment is built up in stages, and every stage follows the same
 rhythm: a diagram of the target, the files involved, the steps to apply them,
-and the reasoning behind the choices.  Each stage is a complete, working
+and the reasoning behind the choices. Each stage is a complete, working
 system — stop whenever you have what you need:
 
 1. [Deploy a single instance](#deploy-a-single-instance) — the
@@ -19,19 +19,19 @@ system — stop whenever you have what you need:
 1. [Publish through a Cloudflare Tunnel](#publish-through-a-cloudflare-tunnel)
    — the whole system on the internet, with no open ports.
 
-## Prerequisites ##
+## Prerequisites
 
 - A Kubernetes cluster and `kubectl` configured to reach it.
 - A default `StorageClass` (or edit [`pvc.yaml`](manifests/pvc.yaml)).
 - A [Gateway API] implementation with a `Gateway` you can attach routes to,
-  plus DNS, if you want external access.  (The
+  plus DNS, if you want external access. (The
   [tunnel stage](#publish-through-a-cloudflare-tunnel) provides one.)
 - A [foundryvtt.com](https://foundryvtt.com/auth/register/) account with a
   purchased software license.
 
 Stages that need anything more say so at the top.
 
-## Deploy a single instance ##
+## Deploy a single instance
 
 One namespace holding one Foundry server: persistent data, credentials from a
 secret, and HTTPS routed in through your cluster's gateway.
@@ -47,95 +47,95 @@ graph LR
     end
 ```
 
-### Files ###
+### Files
 
 Everything lives in [`manifests/`](manifests), a ready-to-use [Kustomize]
 base pinned to the major image tag `:14`:
 
-| File | Resource | Purpose |
-| ---- | -------- | ------- |
-| [`namespace.yaml`](manifests/namespace.yaml) | `Namespace` | Isolates the instance. |
-| [`pvc.yaml`](manifests/pvc.yaml) | `PersistentVolumeClaim` | Persistent `/data` storage. |
-| [`secret.yaml`](manifests/secret.yaml) | `Secret` | Credentials as a `config.json`. |
-| [`deployment.yaml`](manifests/deployment.yaml) | `Deployment` | The Foundry pod. |
-| [`service.yaml`](manifests/service.yaml) | `Service` | Cluster-internal endpoint. |
-| [`httproute.yaml`](manifests/httproute.yaml) | `HTTPRoute` | External HTTPS access via the [Gateway API]. |
+| File                                           | Resource                | Purpose                                      |
+| ---------------------------------------------- | ----------------------- | -------------------------------------------- |
+| [`namespace.yaml`](manifests/namespace.yaml)   | `Namespace`             | Isolates the instance.                       |
+| [`pvc.yaml`](manifests/pvc.yaml)               | `PersistentVolumeClaim` | Persistent `/data` storage.                  |
+| [`secret.yaml`](manifests/secret.yaml)         | `Secret`                | Credentials as a `config.json`.              |
+| [`deployment.yaml`](manifests/deployment.yaml) | `Deployment`            | The Foundry pod.                             |
+| [`service.yaml`](manifests/service.yaml)       | `Service`               | Cluster-internal endpoint.                   |
+| [`httproute.yaml`](manifests/httproute.yaml)   | `HTTPRoute`             | External HTTPS access via the [Gateway API]. |
 
-### Steps ###
+### Steps
 
 1. Edit [`secret.yaml`](manifests/secret.yaml) with your credentials, and set
    `FOUNDRY_HOSTNAME` (in [`deployment.yaml`](manifests/deployment.yaml)) and
    the `hostnames` (in [`httproute.yaml`](manifests/httproute.yaml)) to your
-   domain.  Point the route's `parentRefs` at your cluster's `Gateway`.
+   domain. Point the route's `parentRefs` at your cluster's `Gateway`.
 
 1. Apply the manifests:
 
-    ```console
-    kubectl apply -k manifests/
-    ```
+   ```console
+   kubectl apply -k manifests/
+   ```
 
-1. Watch the pod start.  On first launch it downloads and installs the Foundry
+1. Watch the pod start. On first launch it downloads and installs the Foundry
    distribution, so give it a minute:
 
-    ```console
-    kubectl --namespace foundryvtt rollout status deployment/foundryvtt
-    ```
+   ```console
+   kubectl --namespace foundryvtt rollout status deployment/foundryvtt
+   ```
 
-1. Reach the server.  Before wiring up DNS you can port-forward to it directly:
+1. Reach the server. Before wiring up DNS you can port-forward to it directly:
 
-    ```console
-    kubectl --namespace foundryvtt port-forward service/foundryvtt 30000:80
-    ```
+   ```console
+   kubectl --namespace foundryvtt port-forward service/foundryvtt 30000:80
+   ```
 
-   Then open [http://localhost:30000](http://localhost:30000).  Once your
+   Then open [http://localhost:30000](http://localhost:30000). Once your
    gateway and DNS are in place, browse to your configured hostname instead.
 
-### How it works ###
+### How it works
 
 - **Stable hostname for licensing.** Foundry binds its license to the container
-  hostname.  The Deployment sets `hostname: foundryvtt` so the binding survives
-  pod restarts.  `FOUNDRY_HOSTNAME` is separate — it is the public address
+  hostname. The Deployment sets `hostname: foundryvtt` so the binding survives
+  pod restarts. `FOUNDRY_HOSTNAME` is separate — it is the public address
   Foundry advertises in invitation links.
 
 - **One replica, `Recreate` strategy.** Foundry writes to a single
   `ReadWriteOnce` volume and is not designed to run as multiple concurrent
-  replicas.  `replicas: 1` plus `strategy: Recreate` guarantees the old pod
-  releases the volume before the new pod claims it.  (To run *several* games,
+  replicas. `replicas: 1` plus `strategy: Recreate` guarantees the old pod
+  releases the volume before the new pod claims it. (To run _several_ games,
   see [adding a staging instance](#add-a-staging-instance) — each is its own
   single-replica deployment.)
 
 - **Hardened, read-only root filesystem.** The pod runs as non-root
   (UID/GID `1000`), drops all capabilities, and mounts its root filesystem
-  read-only.  Foundry still needs to write a couple of paths outside `/data`, so
+  read-only. Foundry still needs to write a couple of paths outside `/data`, so
   `/tmp` and `/home/node/resources` are backed by ephemeral `emptyDir` volumes.
 
 - **Probes instead of the Docker `HEALTHCHECK`.** Kubernetes ignores the
   image's built-in health check, so the Deployment declares its own probes
-  against Foundry's `/api/status` endpoint.  The startup probe carries a
+  against Foundry's `/api/status` endpoint. The startup probe carries a
   generous budget because the first boot downloads and installs the Foundry
   distribution before the server answers.
 
 - **Credentials as a mounted secret.** The `Secret` is projected to
   `/run/secrets/config.json`, the location the image reads for credentials.
-  This keeps usernames, passwords, and keys out of the pod's environment.  See
+  This keeps usernames, passwords, and keys out of the pod's environment. See
   the [secrets reference](../../README.md#secrets) for every supported key.
 
-- **TLS at the edge.** The Service speaks plain HTTP on port `80`.  Terminate
+- **TLS at the edge.** The Service speaks plain HTTP on port `80`. Terminate
   TLS at your `Gateway` listener and set `FOUNDRY_PROXY_SSL=true` (already in
-  the Deployment) so invitation links and audio/video use `https`.  Foundry
+  the Deployment) so invitation links and audio/video use `https`. Foundry
   relies on WebSockets, which the Gateway API's `HTTPRoute` carries without
   extra configuration.
 
 > [!TIP]
-> Prefer the classic `Ingress`?  Swap
+> Prefer the classic `Ingress`? Swap
 > [`httproute.yaml`](manifests/httproute.yaml) for an `Ingress` routing your
-> host to the `foundryvtt` Service on port `80`.  Nothing else changes.
+> host to the `foundryvtt` Service on port `80`. Nothing else changes.
 
-## Add a staging instance ##
+## Add a staging instance
 
 A second, independent Foundry server — for example a stable "production"
 table and a "staging" instance for testing modules — built from the same base
-with a thin overlay.  This is exactly how the maintainer runs production and
+with a thin overlay. This is exactly how the maintainer runs production and
 staging side by side.
 
 ```mermaid
@@ -148,13 +148,13 @@ graph LR
     end
 ```
 
-### Files ###
+### Files
 
 The base is untouched; each additional instance is one small overlay beside
 it:
 
-| File | Resource | Purpose |
-| ---- | -------- | ------- |
+| File                                                                         | Resource        | Purpose                                                                                   |
+| ---------------------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------- |
 | [`overlays/staging/kustomization.yaml`](overlays/staging/kustomization.yaml) | `Kustomization` | Renames the namespace and hostnames over the base; optionally pins a different image tag. |
 
 ```yaml
@@ -187,27 +187,27 @@ patches:
       name: foundryvtt
 ```
 
-### Steps ###
+### Steps
 
 1. Copy [`overlays/staging/`](overlays/staging) and replace the hostnames
    with your own.
 
 1. Apply the overlay:
 
-    ```console
-    kubectl apply -k overlays/staging/
-    ```
+   ```console
+   kubectl apply -k overlays/staging/
+   ```
 
 1. Watch it start, exactly as in the first stage:
 
-    ```console
-    kubectl --namespace foundryvtt-staging rollout status deployment/foundryvtt
-    ```
+   ```console
+   kubectl --namespace foundryvtt-staging rollout status deployment/foundryvtt
+   ```
 
-### How it works ###
+### How it works
 
 - **One base, thin overlays.** Every instance shares the hardened manifests;
-  an overlay patches only what differs.  A fix to the base reaches every
+  an overlay patches only what differs. A fix to the base reaches every
   instance on its next apply.
 
 - **Everything that must be unique, is.** The namespace keeps resources from
@@ -217,15 +217,15 @@ patches:
   `HTTPRoute` hostname (routing) — are distinct and stable per instance.
 
 > [!NOTE]
-> Different instances can run different Foundry versions.  Pin each overlay's
+> Different instances can run different Foundry versions. Pin each overlay's
 > image tag — for example `:14.369` for an exact minor release —
 > and set the `FOUNDRY_VERSION` environment variable to match the version you
 > want installed.
 
-## Share the download cache ##
+## Share the download cache
 
 One cache volume serving every instance, so each Foundry release is
-downloaded exactly once no matter how many instances want it.  This stage
+downloaded exactly once no matter how many instances want it. This stage
 needs a `StorageClass` capable of `ReadWriteMany` (NFS, CephFS, EFS, Azure
 Files, and similar).
 
@@ -240,60 +240,60 @@ graph LR
     PodP & PodS -.-> Cache[("shared RWX volume<br>container cache")]
 ```
 
-### Files ###
+### Files
 
 Each instance adds a claim and a small Deployment patch to its overlay:
 
-| File | Resource | Purpose |
-| ---- | -------- | ------- |
-| `cache-pvc.yaml` (one per instance) | `PersistentVolumeClaim` | `ReadWriteMany` claim onto one shared backing directory. |
-| additions to `overlays/*/kustomization.yaml` | `Kustomization` | Includes the claim and mounts the cache. |
+| File                                         | Resource                | Purpose                                                  |
+| -------------------------------------------- | ----------------------- | -------------------------------------------------------- |
+| `cache-pvc.yaml` (one per instance)          | `PersistentVolumeClaim` | `ReadWriteMany` claim onto one shared backing directory. |
+| additions to `overlays/*/kustomization.yaml` | `Kustomization`         | Includes the claim and mounts the cache.                 |
 
-### Steps ###
+### Steps
 
 1. Create a `cache-pvc.yaml` in each instance's overlay:
 
-    ```yaml
-    ---
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: foundryvtt-shared-cache
-    spec:
-      accessModes: [ReadWriteMany]
-      storageClassName: <your-rwx-class>
-      resources:
-        requests:
-          storage: 5Gi
-    ```
+   ```yaml
+   ---
+   apiVersion: v1
+   kind: PersistentVolumeClaim
+   metadata:
+     name: foundryvtt-shared-cache
+   spec:
+     accessModes: [ReadWriteMany]
+     storageClassName: <your-rwx-class>
+     resources:
+       requests:
+         storage: 5Gi
+   ```
 
 1. In each overlay's `kustomization.yaml`, add the claim to `resources:` and
    patch the Deployment to mount it and point `CONTAINER_CACHE` at it:
 
-    ```yaml
-      - patch: |
-          - op: add
-            path: /spec/template/spec/volumes/-
-            value:
-              name: shared-cache
-              persistentVolumeClaim:
-                claimName: foundryvtt-shared-cache
-          - op: add
-            path: /spec/template/spec/containers/0/volumeMounts/-
-            value:
-              name: shared-cache
-              mountPath: /cache
-          - op: replace
-            path: /spec/template/spec/containers/0/env/0/value
-            value: /cache
-        target:
-          kind: Deployment
-          name: foundryvtt
-    ```
+   ```yaml
+   - patch: |
+       - op: add
+         path: /spec/template/spec/volumes/-
+         value:
+           name: shared-cache
+           persistentVolumeClaim:
+             claimName: foundryvtt-shared-cache
+       - op: add
+         path: /spec/template/spec/containers/0/volumeMounts/-
+         value:
+           name: shared-cache
+           mountPath: /cache
+       - op: replace
+         path: /spec/template/spec/containers/0/env/0/value
+         value: /cache
+     target:
+       kind: Deployment
+       name: foundryvtt
+   ```
 
 1. Re-apply each overlay.
 
-### How it works ###
+### How it works
 
 - **Start-ups coordinate through the cache itself.** One instance downloads a
   release while the others wait for the finished file; a crashed downloader's
@@ -309,12 +309,12 @@ Each instance adds a claim and a small Deployment patch to its overlay:
 > across major versions keeps whatever its instances actually install — an
 > older major's release survives as long as some instance still uses it.
 
-## Publish through a Cloudflare Tunnel ##
+## Publish through a Cloudflare Tunnel
 
 The whole system on the internet with no inbound ports: a [Cloudflare Tunnel]
 acts as the Gateway implementation, so the `HTTPRoute`s are unchanged except
-for their `parentRefs`.  TLS terminates at Cloudflare's edge and `cloudflared`
-maintains outbound-only connections.  This stage needs a
+for their `parentRefs`. TLS terminates at Cloudflare's edge and `cloudflared`
+maintains outbound-only connections. This stage needs a
 [Cloudflare](https://www.cloudflare.com) account with a domain you manage.
 This is how the maintainer publishes their own instances.
 
@@ -328,15 +328,15 @@ graph LR
     end
 ```
 
-### Files ###
+### Files
 
 The gateway definition lives in [`cloudflare/`](cloudflare); the API token is
 created imperatively so it never lands in a file:
 
-| File | Resource | Purpose |
-| ---- | -------- | ------- |
+| File                                                           | Resource       | Purpose                                       |
+| -------------------------------------------------------------- | -------------- | --------------------------------------------- |
 | [`cloudflare/gatewayclass.yaml`](cloudflare/gatewayclass.yaml) | `GatewayClass` | The tunnel as a [Gateway API] implementation. |
-| [`cloudflare/gateway.yaml`](cloudflare/gateway.yaml) | `Gateway` | The edge gateway that routes attach to. |
+| [`cloudflare/gateway.yaml`](cloudflare/gateway.yaml)           | `Gateway`      | The edge gateway that routes attach to.       |
 
 ```yaml
 ---
@@ -370,49 +370,49 @@ spec:
           from: All
 ```
 
-### Steps ###
+### Steps
 
 1. Install the [cloudflare-kubernetes-gateway] controller (pin a release):
 
-    ```console
-    kubectl apply -k https://github.com/pl4nty/cloudflare-kubernetes-gateway/config/default?ref=v0.10.1
-    ```
+   ```console
+   kubectl apply -k https://github.com/pl4nty/cloudflare-kubernetes-gateway/config/default?ref=v0.10.1
+   ```
 
 1. Create a namespace and a Secret holding a [Cloudflare API token] with the
    `Account:Cloudflare Tunnel:Edit` and `Zone:DNS:Edit` permissions:
 
-    ```console
-    kubectl create namespace cloudflare-gateway
-    kubectl --namespace cloudflare-gateway create secret generic cloudflare-api-token \
-      --from-literal=ACCOUNT_ID='<your_account_id>' \
-      --from-literal=TOKEN='<your_api_token>'
-    ```
+   ```console
+   kubectl create namespace cloudflare-gateway
+   kubectl --namespace cloudflare-gateway create secret generic cloudflare-api-token \
+     --from-literal=ACCOUNT_ID='<your_account_id>' \
+     --from-literal=TOKEN='<your_api_token>'
+   ```
 
 1. Apply the gateway definition:
 
-    ```console
-    kubectl apply -f cloudflare/
-    ```
+   ```console
+   kubectl apply -f cloudflare/
+   ```
 
 1. Point each instance's route at the tunnel by editing the `parentRefs` in
    [`httproute.yaml`](manifests/httproute.yaml):
 
-    ```yaml
-      parentRefs:
-        - name: cloudflare-edge
-          namespace: cloudflare-gateway
-    ```
+   ```yaml
+   parentRefs:
+     - name: cloudflare-edge
+       namespace: cloudflare-gateway
+   ```
 
    Re-apply each overlay.
 
-### How it works ###
+### How it works
 
 - **The controller does the lifting.** It creates and manages the tunnel and
   its `cloudflared` Deployment, and publishes a DNS record for every
   `HTTPRoute` hostname — there is no port forwarding or NAT to configure.
 
 - **The application never noticed.** Routing stayed an `HTTPRoute`; only the
-  `parentRefs` changed.  `FOUNDRY_PROXY_SSL=true` keeps invitation links and
+  `parentRefs` changed. `FOUNDRY_PROXY_SSL=true` keeps invitation links and
   audio/video on `https`, now terminated at Cloudflare's edge.
 
 > [!TIP]
@@ -422,9 +422,9 @@ spec:
 > and directly on your network — split-horizon with no extra application
 > configuration.
 
-## Updating ##
+## Updating
 
-The in-application "Update Software" tab is disabled in this image.  The
+The in-application "Update Software" tab is disabled in this image. The
 Deployment pins the `:14` tag with `imagePullPolicy: Always`,
 so a rollout re-pulls the newest matching image:
 

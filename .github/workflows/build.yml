@@ -63,15 +63,8 @@ jobs:
           bun-version-file: package.json
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Type-check
-        run: bun run typecheck
-      - name: Cache pre-commit hook environments
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # tag=v6.1.0
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: Run pre-commit on all files
-        run: pipx run pre-commit run --all-files --show-diff-on-failure
+      - name: Lint
+        run: bun run lint
 
   unit-test:
     name: Unit Tests

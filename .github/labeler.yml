@@ -4,7 +4,6 @@
 "dependencies :game_die:":
   - changed-files:
       - any-glob-to-any-file:
-          - .pre-commit-config.yaml
           - bun.lock
           - package.json
 
@@ -33,10 +32,11 @@
 "test :test_tube:":
   - changed-files:
       - any-glob-to-any-file:
-          - .ansible-lint
-          - .mdl_config.yaml
-          - compose.yml
+          - .editorconfig
+          - .husky/**
+          - .oxfmtrc.json
           - tests/**
+          - tools/check_files.ts
 
 "typescript :blue_book:":
   - changed-files:

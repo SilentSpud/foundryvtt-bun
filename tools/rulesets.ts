@@ -44,7 +44,7 @@ function gh(args: string[], input?: string): string {
     return result.stdout.toString();
 }
 
-/** Recursively sort object keys, matching the committed (pre-commit) format. */
+/** Recursively sort object keys, matching the committed files. */
 export function sortKeys(value: unknown): unknown {
     if (Array.isArray(value)) {
         return value.map(sortKeys);

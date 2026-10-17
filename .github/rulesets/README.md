@@ -1,20 +1,20 @@
-# Repository rulesets #
+# Repository rulesets
 
 This directory holds the repository's GitHub rulesets, managed as code so
 that branch and tag protection is reviewable, version-controlled, and
 reproducible instead of being hand-edited in the web UI.
 
-## How it works ##
+## How it works
 
 Each `*.json` file in this directory is a single, self-contained ruleset,
 identified by its `name` field rather than a numeric ID so nothing is
-hardcoded.  The `ruleset:*` scripts operate on every `*.json` file here, so
+hardcoded. The `ruleset:*` scripts operate on every `*.json` file here, so
 adding or removing a ruleset is just a matter of adding or removing a file.
 
 Managing rulesets requires [Bun](https://bun.sh) and the GitHub CLI (`gh`),
 with `gh` authenticated as a repository admin.
 
-## Applying ##
+## Applying
 
 Push the local rulesets up to GitHub:
 
@@ -22,12 +22,12 @@ Push the local rulesets up to GitHub:
 bun run ruleset:apply
 ```
 
-For each file, `ruleset:apply` resolves the ruleset by its `name`.  If a
+For each file, `ruleset:apply` resolves the ruleset by its `name`. If a
 ruleset with that name already exists it is updated (`PUT`); otherwise it is
-created (`POST`).  The same body works for both, so this also bootstraps a
+created (`POST`). The same body works for both, so this also bootstraps a
 repository that has no matching ruleset yet.
 
-## Exporting ##
+## Exporting
 
 If a ruleset is edited in the GitHub UI, pull those changes back into the
 files so the repository stays the source of truth:
@@ -41,10 +41,10 @@ For each file, `ruleset:export` fetches the live ruleset (located by its
 `_links`, `created_at`, timestamps, and so on), and rewrites the JSON.
 Review the diff and commit the result.
 
-## Decoding numeric IDs ##
+## Decoding numeric IDs
 
 Rulesets reference GitHub Apps and repository roles by numeric ID because
-the API requires the number rather than a slug.  These IDs are stable; look
+the API requires the number rather than a slug. These IDs are stable; look
 one up with the GitHub CLI, for example:
 
 ```console

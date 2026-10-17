@@ -6,12 +6,5 @@ indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{sh,bash}]
-binary_next_line = true
-indent_size = 2
-keep_padding       = true
-space_redirects    = true
-switch_case_indent = true
-
-[*.{yml,yaml}]
+[*.{json,md,sh,yml,yaml}]
 indent_size = 2

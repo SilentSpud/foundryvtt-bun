@@ -15,12 +15,8 @@
       "datasourceTemplate": "custom.foundryvtt",
       "depNameTemplate": "foundryvtt",
       "description": "Track FoundryVTT stable releases via src/version.txt",
-      "managerFilePatterns": [
-        "/^src/version\\.txt$/"
-      ],
-      "matchStrings": [
-        "^(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*$"
-      ],
+      "managerFilePatterns": ["/^src/version\\.txt$/"],
+      "matchStrings": ["^(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*$"],
       "versioningTemplate": "semver"
     },
     {
@@ -28,44 +24,24 @@
       "datasourceTemplate": "npm",
       "depNameTemplate": "@foundryvtt/foundryvtt-cli",
       "description": "Track the Foundry VTT CLI version pinned in the Dockerfile",
-      "managerFilePatterns": [
-        "/^Dockerfile$/"
-      ],
-      "matchStrings": [
-        "ARG FOUNDRYVTT_CLI_VERSION=(?<currentValue>\\S+)"
-      ],
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": ["ARG FOUNDRYVTT_CLI_VERSION=(?<currentValue>\\S+)"],
       "versioningTemplate": "npm"
     }
   ],
-  "enabledManagers": [
-    "custom.regex"
-  ],
-  "extends": [
-    "config:recommended"
-  ],
+  "enabledManagers": ["custom.regex"],
+  "extends": ["config:recommended"],
   "packageRules": [
     {
       "commitMessageTopic": "Foundry VTT CLI",
-      "labels": [
-        "bot :robot:",
-        "dependencies :game_die:"
-      ],
-      "matchDatasources": [
-        "npm"
-      ],
-      "matchDepNames": [
-        "@foundryvtt/foundryvtt-cli"
-      ]
+      "labels": ["bot :robot:", "dependencies :game_die:"],
+      "matchDatasources": ["npm"],
+      "matchDepNames": ["@foundryvtt/foundryvtt-cli"]
     },
     {
       "commitMessageTopic": "FoundryVTT",
-      "labels": [
-        "bot :robot:",
-        "dependencies :game_die:"
-      ],
-      "matchDatasources": [
-        "custom.foundryvtt"
-      ]
+      "labels": ["bot :robot:", "dependencies :game_die:"],
+      "matchDatasources": ["custom.foundryvtt"]
     }
   ]
 }

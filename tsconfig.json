@@ -2,9 +2,7 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "module": "Preserve",
     "moduleDetection": "force",
     "moduleResolution": "bundler",
@@ -16,14 +14,8 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
-    "types": [
-      "bun"
-    ],
+    "types": ["bun"],
     "verbatimModuleSyntax": true
   },
-  "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts",
-    "tools/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "tools/**/*.ts"]
 }
