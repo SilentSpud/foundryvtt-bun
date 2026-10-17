@@ -1,0 +1,180 @@
+---
+name: Build container image
+
+# Builds one bake target per platform and pushes it by digest only; the
+# publish workflow tags the multi-platform manifest once tests pass.
+
+permissions: {}
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: Image name without registry (e.g. owner/image)
+        required: true
+        type: string
+      platforms:
+        description: JSON array of platforms to build (e.g. '["linux/amd64"]')
+        required: true
+        type: string
+      target:
+        description: The docker-bake.hcl target to build
+        required: true
+        type: string
+      container-version:
+        description: The container version (x.y.z)
+        required: true
+        type: string
+      foundry-version:
+        description: The Foundry version (generation.build)
+        required: true
+        type: string
+      link-repository:
+        description: >
+          Label the image with this repository as its source.  Leave false for
+          images that must stay private, since the label links the package.
+        required: false
+        type: boolean
+        default: true
+      scan:
+        description: Fail on CRITICAL or HIGH vulnerabilities found by Trivy
+        required: false
+        type: boolean
+        default: false
+      upload-scan-results:
+        description: Upload the Trivy results to code scanning
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      registry-token:
+        description: Token for pushing to GHCR. Defaults to GITHUB_TOKEN.
+        required: false
+      foundry-username:
+        description: foundryvtt.com username, for the preinstall target
+        required: false
+      foundry-password:
+        description: foundryvtt.com password, for the preinstall target
+        required: false
+
+# errtrace, nounset, errexit, and pipefail; -x echoes each command.
+defaults:
+  run:
+    shell: bash -Eueo pipefail -x {0}
+
+env:
+  # aquasec/trivy:0.75.0
+  TRIVY_IMAGE: aquasec/trivy@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(inputs.platforms) }}
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    env:
+      IMAGE_REPO: ghcr.io/${{ inputs.image-name }}
+      REGISTRY_USER: ${{ secrets.registry-token && github.repository_owner || github.actor }}
+      REGISTRY_TOKEN: ${{ secrets.registry-token || secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+
+      - name: Derive slugs
+        id: slugs
+        env:
+          IMAGE_NAME: ${{ inputs.image-name }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          echo "image=${IMAGE_NAME//\//-}" >> "$GITHUB_OUTPUT"
+          echo "platform=${PLATFORM//\//-}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        run: docker login ghcr.io --username "$REGISTRY_USER" --password-stdin <<< "$REGISTRY_TOKEN"
+
+      # The default docker driver cannot push by digest or export a cache.
+      - name: Create a BuildKit builder
+        run: docker buildx create --name ci --driver docker-container --use --bootstrap
+
+      - name: Build and push by digest
+        id: build
+        env:
+          CONTAINER_VERSION: ${{ inputs.container-version }}
+          FOUNDRY_VERSION: ${{ inputs.foundry-version }}
+          FOUNDRY_USERNAME: ${{ secrets.foundry-username }}
+          FOUNDRY_PASSWORD: ${{ secrets.foundry-password }}
+          LINK: ${{ inputs.link-repository }}
+          PLATFORM: ${{ matrix.platform }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          TARGET: ${{ inputs.target }}
+          # Registry caches live beside the image, so no Actions cache token is needed.
+          CACHE_REF: ghcr.io/${{ inputs.image-name }}:buildcache-${{ steps.slugs.outputs.platform }}
+        run: |
+          sets=(
+            --set "${TARGET}.platform=${PLATFORM}"
+            --set "${TARGET}.tags=${IMAGE_REPO}"
+            --set "${TARGET}.output=type=image,name=${IMAGE_REPO},push-by-digest=true,name-canonical=true,push=true"
+            --set "${TARGET}.cache-from=type=registry,ref=${CACHE_REF}"
+            --set "${TARGET}.cache-to=type=registry,ref=${CACHE_REF},mode=max"
+            --set "${TARGET}.labels.org.opencontainers.image.revision=${GITHUB_SHA}"
+            --set "${TARGET}.labels.org.opencontainers.image.version=${CONTAINER_VERSION}"
+          )
+          if [[ "$LINK" == "true" ]]; then
+            sets+=(--set "${TARGET}.labels.org.opencontainers.image.source=${REPO_URL}")
+          fi
+          docker buildx bake "$TARGET" "${sets[@]}" \
+            --provenance=false --sbom=false --metadata-file /tmp/bake.json
+          digest=$(jq -r --arg t "$TARGET" '.[$t]["containerimage.digest"]' /tmp/bake.json)
+          if [[ ! "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "::error::Unexpected digest: ${digest}"
+            exit 1
+          fi
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # tag=v7.0.2
+        with:
+          if-no-files-found: error
+          name: digests-${{ steps.slugs.outputs.image }}-${{ steps.slugs.outputs.platform }}
+          path: /tmp/digests/*
+          retention-days: 1
+
+      - name: Scan with Trivy
+        id: trivy
+        if: inputs.scan
+        env:
+          REF: ${{ env.IMAGE_REPO }}@${{ steps.build.outputs.digest }}
+        run: |
+          trivy() {
+            docker run --rm \
+              --env TRIVY_USERNAME="$REGISTRY_USER" --env TRIVY_PASSWORD="$REGISTRY_TOKEN" \
+              --volume "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" \
+              --volume "$PWD:/work" --workdir /work \
+              "$TRIVY_IMAGE" image --ignore-unfixed --pkg-types os,library "$@" "$REF"
+          }
+          trivy --format table
+          status=0
+          trivy --skip-db-update --severity CRITICAL,HIGH --exit-code 1 \
+            --format sarif --output trivy.sarif || status=$?
+          echo "status=${status}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Trivy results to code scanning
+        if: inputs.scan && inputs.upload-scan-results
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # tag=v4.39.0
+        with:
+          category: container-scan-${{ matrix.platform }}
+          sarif_file: trivy.sarif
+
+      - name: Fail on vulnerabilities
+        if: inputs.scan && steps.trivy.outputs.status != '0'
+        run: |
+          echo "::error::Trivy found CRITICAL or HIGH vulnerabilities in ${{ matrix.platform }}."
+          exit 1

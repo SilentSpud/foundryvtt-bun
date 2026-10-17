@@ -1,0 +1,165 @@
+---
+name: Publish container manifest
+
+# Combines the per-platform digests from _container-build.yml into one tagged
+# manifest and attests its build provenance.
+
+permissions: {}
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: Image name without registry (e.g. owner/image)
+        required: true
+        type: string
+      platforms:
+        description: JSON array of platforms in the manifest
+        required: true
+        type: string
+      link-repository:
+        description: Annotate the manifest with this repository as its source
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      registry-token:
+        description: Token for pushing to GHCR. Defaults to GITHUB_TOKEN.
+        required: false
+    outputs:
+      tag-names:
+        description: The tags applied, space-separated (e.g. "14.369.0 14.369 14")
+        value: ${{ jobs.publish.outputs.tag-names }}
+      is-latest:
+        description: Whether this run published the latest release
+        value: ${{ jobs.publish.outputs.is-latest }}
+
+# errtrace, nounset, errexit, and pipefail; -x echoes each command.
+defaults:
+  run:
+    shell: bash -Eueo pipefail -x {0}
+
+jobs:
+  publish:
+    name: Publish manifest
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    outputs:
+      tag-names: ${{ steps.tags.outputs.names }}
+      is-latest: ${{ steps.tags.outputs.is-latest }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      IMAGE_REPO: ghcr.io/${{ inputs.image-name }}
+    steps:
+      - name: Choose tags for this event
+        id: tags
+        env:
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          sha="sha-${GITHUB_SHA:0:7}"
+          is_latest=false
+          case "$EVENT" in
+            pull_request)
+              tags=("pr-${PR}" "$sha")
+              ;;
+            push | merge_group)
+              branch=$(tr '[:upper:]' '[:lower:]' <<< "${GITHUB_REF#refs/heads/}" \
+                | sed -E 's/[^a-z0-9_.-]+/-/g; s/^-+|-+$//g')
+              tags=("$branch" "$sha")
+              ;;
+            release)
+              version="${RELEASE_TAG#v}"
+              if [[ "$PRERELEASE" == "true" ]]; then
+                tags=("$version" prerelease)
+              else
+                tags=("$version")
+                if [[ "$version" =~ ^([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
+                  tags+=("${BASH_REMATCH[1]}.${BASH_REMATCH[2]}" "${BASH_REMATCH[1]}")
+                fi
+                latest=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)
+                if [[ "$latest" == "$RELEASE_TAG" ]]; then
+                  is_latest=true
+                  tags+=(release latest)
+                fi
+              fi
+              ;;
+            schedule)
+              tags=(edge)
+              ;;
+            workflow_dispatch)
+              tags=(dispatch)
+              ;;
+            *)
+              echo "::error::No tags defined for the ${EVENT} event."
+              exit 1
+              ;;
+          esac
+          echo "names=${tags[*]}" >> "$GITHUB_OUTPUT"
+          echo "is-latest=${is_latest}" >> "$GITHUB_OUTPUT"
+
+      - name: Download digests
+        env:
+          IMAGE_NAME: ${{ inputs.image-name }}
+          PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          mkdir -p /tmp/digests
+          for platform in $(jq -r '.[]' <<< "$PLATFORMS"); do
+            name="digests-${IMAGE_NAME//\//-}-${platform//\//-}"
+            gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+              --name "$name" --dir "/tmp/digests/${name}"
+          done
+
+      - name: Log in to GHCR
+        env:
+          REGISTRY_USER: ${{ secrets.registry-token && github.repository_owner || github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.registry-token || secrets.GITHUB_TOKEN }}
+        run: docker login ghcr.io --username "$REGISTRY_USER" --password-stdin <<< "$REGISTRY_TOKEN"
+
+      - name: Create and push the manifest
+        id: manifest
+        env:
+          LINK: ${{ inputs.link-repository }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          TAG_NAMES: ${{ steps.tags.outputs.names }}
+        run: |
+          args=()
+          for tag in $TAG_NAMES; do
+            args+=(--tag "${IMAGE_REPO}:${tag}")
+          done
+          if [[ "$LINK" == "true" ]]; then
+            args+=(--annotation "index:org.opencontainers.image.source=${REPO_URL}")
+          fi
+          for dir in /tmp/digests/*/; do
+            hex=$(find "$dir" -maxdepth 1 -type f -regextype posix-extended \
+              -regex '.*/[a-f0-9]{64}' -printf '%f\n')
+            if [[ $(wc -l <<< "$hex") -ne 1 ]]; then
+              echo "::error::Expected exactly one digest in ${dir}: ${hex}"
+              exit 1
+            fi
+            args+=("${IMAGE_REPO}@sha256:${hex}")
+          done
+          docker buildx imagetools create "${args[@]}"
+          first="${TAG_NAMES%% *}"
+          digest=$(docker buildx imagetools inspect "${IMAGE_REPO}:${first}" \
+            --format '{{json .Manifest}}' | jq -r .digest)
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          {
+            echo "### ${IMAGE_REPO}"
+            echo "Digest: \`${digest}\`"
+            echo "Tags: \`${TAG_NAMES}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # tag=v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE_REPO }}
+          subject-digest: ${{ steps.manifest.outputs.digest }}
+          push-to-registry: true

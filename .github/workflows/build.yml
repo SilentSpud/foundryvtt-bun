@@ -32,10 +32,6 @@ concurrency:
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  attestations: write
-  security-events: write
 
 jobs:
   config:
@@ -76,8 +72,37 @@ jobs:
       - name: Run unit tests
         run: bun test tests/unit
 
+  # Job-level `if:` cannot read secrets, so report which optional ones exist.
+  secret-check:
+    name: Check optional secrets
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      preinstall: ${{ steps.check.outputs.preinstall }}
+      dockerhub: ${{ steps.check.outputs.dockerhub }}
+    steps:
+      - name: Check optional secrets
+        id: check
+        env:
+          FOUNDRY_USERNAME: ${{ secrets.FOUNDRY_USERNAME }}
+          FOUNDRY_PASSWORD: ${{ secrets.FOUNDRY_PASSWORD }}
+          PRIVATE_PACKAGE_TOKEN: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          preinstall=false
+          if [[ -n "$FOUNDRY_USERNAME" && -n "$FOUNDRY_PASSWORD" && -n "$PRIVATE_PACKAGE_TOKEN" ]]; then
+            preinstall=true
+          fi
+          dockerhub=false
+          if [[ -n "$DOCKER_USERNAME" && -n "$DOCKER_PASSWORD" ]]; then
+            dockerhub=true
+          fi
+          echo "preinstall=${preinstall}" >> "$GITHUB_OUTPUT"
+          echo "dockerhub=${dockerhub}" >> "$GITHUB_OUTPUT"
+
   build:
-    name: Build and Publish Container
+    name: Build Container
     needs:
       - config
       - lint
@@ -86,50 +111,54 @@ jobs:
     if: |
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    uses: felddy/reusable-workflows/.github/workflows/container-build.yml@8a2ace3a3358dad0f5269a4c47397d3d03156a20 # tag=v4.2.1
+    uses: ./.github/workflows/_container-build.yml
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
     with:
-      platforms: ${{ needs.config.outputs.platforms }}
       image-name: ${{ needs.config.outputs.image_name }}
-      context: .
-      dockerfile: ./Dockerfile
-      scan-severity: CRITICAL,HIGH
+      platforms: ${{ needs.config.outputs.platforms }}
+      target: image
+      container-version: ${{ needs.config.outputs.container_version }}
+      foundry-version: ${{ needs.config.outputs.foundry_version }}
+      scan: true
       # Code scanning rejects SARIF not tied to a branch or PR, so release and
       # tag runs still scan but skip the upload.
       upload-scan-results: >-
         ${{ github.event_name == 'pull_request'
           || github.event_name == 'merge_group'
           || startsWith(github.ref, 'refs/heads/') }}
-      build-args: |
-        CONTAINER_VERSION=${{ needs.config.outputs.container_version }}
-        FOUNDRY_VERSION=${{ needs.config.outputs.foundry_version }}
 
   build-preinstalled:
-    name: Build and Publish Container Pre-Installed
+    name: Build Container Pre-Installed
     needs:
       - config
       - lint
       - unit-test
+      - secret-check
+    # This image contains Foundry itself, so it is pushed with a personal
+    # token and never linked to the public repository.
     if: |
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
-    uses: felddy/reusable-workflows/.github/workflows/container-build.yml@8a2ace3a3358dad0f5269a4c47397d3d03156a20 # tag=v4.2.1
+      needs.secret-check.outputs.preinstall == 'true' && (
+        github.event_name != 'pull_request' ||
+        github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/_container-build.yml
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
     with:
-      build-secret-1-name: foundry_password
-      build-secret-2-name: foundry_username
-      cache-scope: preinstall # prevent preinstall from skipping from regular build cache
-      platforms: ${{ needs.config.outputs.test_platforms }}
       image-name: ${{ needs.config.outputs.image_name_preinstall }}
-      context: .
-      dockerfile: ./Dockerfile
-      scan-severity: "" # don't fail on vulns in FoundryVTT binaries
-      upload-scan-results: false # don't pollute repo security tab with third-party vulns
-      build-args: |
-        CONTAINER_VERSION=${{ needs.config.outputs.container_version }}
-        FOUNDRY_VERSION=${{ needs.config.outputs.foundry_version }}
+      platforms: ${{ needs.config.outputs.test_platforms }}
+      target: preinstall
+      container-version: ${{ needs.config.outputs.container_version }}
+      foundry-version: ${{ needs.config.outputs.foundry_version }}
+      link-repository: false
     secrets:
-      private-package-token: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
-      build-secret-1: ${{ secrets.FOUNDRY_PASSWORD }}
-      build-secret-2: ${{ secrets.FOUNDRY_USERNAME }}
+      registry-token: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
+      foundry-username: ${{ secrets.FOUNDRY_USERNAME }}
+      foundry-password: ${{ secrets.FOUNDRY_PASSWORD }}
 
   test:
     name: Test Container
@@ -172,6 +201,7 @@ jobs:
       - config
       - lint
       - unit-test
+      - secret-check
       - build
       - build-preinstalled
       - test
@@ -180,6 +210,7 @@ jobs:
     # failure; `!cancelled()` still runs after a dependency fails.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Verify required jobs succeeded
         run: |
@@ -187,7 +218,8 @@ jobs:
           [[ "${{ needs.config.result }}"      == success ]] || { echo "config: ${{ needs.config.result }}";           exit 1; }
           [[ "${{ needs.lint.result }}"        == success ]] || { echo "lint: ${{ needs.lint.result }}";               exit 1; }
           [[ "${{ needs['unit-test'].result }}" == success ]] || { echo "unit-test: ${{ needs['unit-test'].result }}"; exit 1; }
-          # Skipped on fork PRs, which have no secrets:
+          [[ "${{ needs.secret-check.result }}"     == success ]] || { echo "secret-check: ${{ needs.secret-check.result }}";    exit 1; }
+          # Skipped on fork PRs, and the preinstall jobs also without their secrets:
           [[ "${{ needs.build.result }}"              =~ ^(success|skipped)$ ]] || { echo "build: ${{ needs.build.result }}";                           exit 1; }
           [[ "${{ needs['build-preinstalled'].result }}" =~ ^(success|skipped)$ ]] || { echo "build-preinstalled: ${{ needs['build-preinstalled'].result }}"; exit 1; }
           [[ "${{ needs.test.result }}"               =~ ^(success|skipped)$ ]] || { echo "test: ${{ needs.test.result }}";                             exit 1; }
@@ -201,13 +233,17 @@ jobs:
       - build
       - test
       - test-preinstalled
-    uses: felddy/reusable-workflows/.github/workflows/container-publish-manifest.yml@8a2ace3a3358dad0f5269a4c47397d3d03156a20 # tag=v4.2.1
+    # A skipped preinstall run must not block the standard image.
+    if: |
+      !cancelled() && needs.build.result == 'success' && needs.test.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.test-preinstalled.result)
+    uses: ./.github/workflows/_container-publish.yml
     permissions:
       actions: read
-      contents: read
-      packages: write
-      id-token: write
       attestations: write
+      contents: read
+      id-token: write
+      packages: write
     with:
       image-name: ${{ needs.config.outputs.image_name }}
       platforms: ${{ needs.config.outputs.platforms }}
@@ -219,51 +255,95 @@ jobs:
       - build-preinstalled
       - test
       - test-preinstalled
-    uses: felddy/reusable-workflows/.github/workflows/container-publish-manifest.yml@8a2ace3a3358dad0f5269a4c47397d3d03156a20 # tag=v4.2.1
+    uses: ./.github/workflows/_container-publish.yml
     permissions:
       actions: read
-      contents: read
-      packages: write
-      id-token: write
       attestations: write
+      contents: read
+      id-token: write
+      packages: write
     with:
       image-name: ${{ needs.config.outputs.image_name_preinstall }}
       platforms: ${{ needs.config.outputs.test_platforms }}
+      link-repository: false
     secrets:
-      private-package-token: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
+      registry-token: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
 
   mirror-to-dockerhub:
-    name: Mirror images to DockerHub
+    name: Mirror images to Docker Hub
     needs:
-      - publish-manifest
-      - publish-manifest-preinstalled
       - config
-    if: github.event_name == 'release' && !github.event.release.prerelease
+      - secret-check
+      - publish-manifest
+    if: |
+      github.event_name == 'release' && !github.event.release.prerelease &&
+      needs.secret-check.outputs.dockerhub == 'true'
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
-    uses: felddy/reusable-workflows/.github/workflows/container-mirror.yml@8a2ace3a3358dad0f5269a4c47397d3d03156a20 # tag=v4.2.1
-    with:
-      image_name: ${{ needs.config.outputs.image_name }}
-      image_tag_names: ${{ needs.publish-manifest.outputs.image-tag-names }}
-      target_registry: docker.io
-    secrets:
-      target-registry-username: ${{ secrets.DOCKER_USERNAME }}
-      target-registry-password: ${{ secrets.DOCKER_PASSWORD }}
+    steps:
+      - name: Log in to GHCR and Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin <<< "$GITHUB_TOKEN"
+          docker login docker.io --username "$DOCKER_USERNAME" --password-stdin <<< "$DOCKER_PASSWORD"
+      - name: Copy each tag
+        env:
+          IMAGE_NAME: ${{ needs.config.outputs.image_name }}
+          TAG_NAMES: ${{ needs.publish-manifest.outputs.tag-names }}
+        run: |
+          for tag in $TAG_NAMES; do
+            docker buildx imagetools create \
+              --tag "docker.io/${IMAGE_NAME}:${tag}" "ghcr.io/${IMAGE_NAME}:${tag}"
+          done
 
   publish-readme:
-    name: Publish docs to DockerHub
+    name: Publish README to Docker Hub
     needs:
-      - publish-manifest
-      - publish-manifest-preinstalled
       - config
+      - secret-check
+      - publish-manifest
     if: |
-      github.event_name == 'release' &&
-      !github.event.release.prerelease &&
+      github.event_name == 'release' && !github.event.release.prerelease &&
+      needs.secret-check.outputs.dockerhub == 'true' &&
       needs.publish-manifest.outputs.is-latest == 'true'
-    uses: felddy/reusable-workflows/.github/workflows/dockerhub-description.yml@8a2ace3a3358dad0f5269a4c47397d3d03156a20 # tag=v4.2.1
-    with:
-      image_name: ${{ needs.config.outputs.image_name }}
-    secrets:
-      docker_password: ${{ secrets.DOCKER_PASSWORD }}
-      docker_username: ${{ secrets.DOCKER_USERNAME }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+      - name: Update the Docker Hub overview
+        env:
+          BLOB_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}
+          DESCRIPTION: ${{ github.event.repository.description }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_NAME: ${{ needs.config.outputs.image_name }}
+        run: |
+          # Docker Hub resolves no relative links and caps the overview at
+          # 25,000 characters, so absolutize links and cut at a paragraph break.
+          sed -E "s|\]\((\./)?([^)#:]+)\)|](${BLOB_URL}/\2)|g" README.md > /tmp/readme.md
+          if (( $(wc -c < /tmp/readme.md) > 24000 )); then
+            head -c 24000 /tmp/readme.md | sed '$d' \
+              | awk '/^$/{last=NR} {lines[NR]=$0} END{for (i = 1; i < last; i++) print lines[i]}' \
+              > /tmp/short.md
+            printf '\nThe full documentation is in the [README](%s/README.md).\n' "$BLOB_URL" >> /tmp/short.md
+            mv /tmp/short.md /tmp/readme.md
+          fi
+          set +x
+          token=$(jq -n --arg u "$DOCKER_USERNAME" --arg p "$DOCKER_PASSWORD" \
+              '{identifier: $u, secret: $p}' \
+            | curl --fail --silent --show-error --json @- \
+              https://hub.docker.com/v2/auth/token | jq -r .access_token)
+          # Not in Docker Hub's published API reference, but it is the endpoint
+          # the Docker Hub web UI uses to save the overview.
+          jq -n --rawfile full /tmp/readme.md --arg short "${DESCRIPTION:0:100}" \
+              '{full_description: $full, description: $short}' \
+            | curl --fail --silent --show-error --output /dev/null --request PATCH \
+              --header "Authorization: Bearer ${token}" --json @- \
+              "https://hub.docker.com/v2/repositories/${IMAGE_NAME}/"
