@@ -36,7 +36,7 @@ permissions:
 jobs:
   diagnostics:
     name: Run Diagnostics
-    uses: felddy/reusable-workflows/.github/workflows/diagnostics.yml@76486c28caa391f5f9db4941fc555a20a6e084c8 # tag=v4.2.0
+    uses: felddy/reusable-workflows/.github/workflows/diagnostics.yml@8a2ace3a3358dad0f5269a4c47397d3d03156a20 # tag=v4.2.1
 
   renovate:
     needs:
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # tag=v2.21.1
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # tag=v2.22.1
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -58,14 +58,14 @@ jobs:
             release-assets.githubusercontent.com:443
       - name: Generate a GitHub App installation token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # tag=v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # tag=v3.3.0
         with:
           client-id: ${{ vars.RENOVATE_APP_ID }}
           private-key: ${{ secrets.RENOVATE_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
       - name: Run Renovate
-        uses: renovatebot/github-action@f3a31a786096ba6b40d0f0ffe11a494ef73bfa7c # tag=v46.3.4
+        uses: renovatebot/github-action@f0f41e5f2e706165f6814b1d0f0d0e319de7d1d9 # tag=v46.3.8
         with:
           token: ${{ steps.app-token.outputs.token }}
         env:

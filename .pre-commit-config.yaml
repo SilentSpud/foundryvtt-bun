@@ -22,9 +22,7 @@ repos:
       - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
       - id: check-symlinks
-      - id: check-toml
       - id: check-vcs-permalinks
-      - id: check-xml
       - id: destroyed-symlinks
       - id: detect-aws-credentials
         args:
@@ -42,7 +40,7 @@ repos:
 
   # Text file hooks
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.48.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint
         args:
@@ -66,49 +64,20 @@ repos:
 
   # GitHub Actions hooks
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.0
+    rev: 0.38.2
     hooks:
       - id: check-github-actions
       - id: check-github-workflows
 
   # pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit
-    rev: v4.5.1
+    rev: v4.7.0
     hooks:
       - id: validate_manifest
 
-  # Go hooks
-  - repo: https://github.com/TekWizely/pre-commit-golang
-    rev: v1.0.0-rc.4
-    hooks:
-      # Go Build
-      - id: go-build-repo-mod
-      # Style Checkers
-      - id: go-critic
-      # goimports
-      - id: go-imports-repo
-        args:
-          # Write changes to files
-          - -w
-      # Go Mod Tidy
-      - id: go-mod-tidy-repo
-      # GoSec
-      - id: go-sec-repo-mod
-      # StaticCheck
-      - id: go-staticcheck-repo-mod
-      # Go Test
-      - id: go-test-repo-mod
-      # Go Vet
-      - id: go-vet-repo-mod
-  # Nix hooks
-  - repo: https://github.com/nix-community/nixpkgs-fmt
-    rev: v1.3.0
-    hooks:
-      - id: nixpkgs-fmt
-
   # Shell script hooks
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.13.0-1
+    rev: v3.14.1-1
     hooks:
       - id: shfmt
         args:
@@ -126,7 +95,7 @@ repos:
           # Redirect operators are followed by a space
           - --space-redirects
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
+    rev: v0.11.0.1-1
     hooks:
       - id: shellcheck
         args:
@@ -142,31 +111,8 @@ repos:
         files: (\.ts|^tsconfig\.json|^package\.json)$
         pass_filenames: false
 
-  # Terraform hooks
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.105.0
-    hooks:
-      - id: terraform_fmt
-      - id: terraform_validate
-      # This needs to run after the terraform_validate hook so that any Terraform
-      # configurations are initialized.
-      - id: terraform_providers_lock
-        args:
-          - --args=-platform=darwin_amd64
-          - --args=-platform=darwin_arm64
-          - --args=-platform=linux_amd64
-          - --args=-platform=linux_arm64
-          - --hook-config=--mode=always-regenerate-lockfile
-
   # Docker hooks
   - repo: https://github.com/IamTheFij/docker-pre-commit
     rev: v3.0.1
     hooks:
       - id: docker-compose-check
-
-  # Packer hooks
-  - repo: https://github.com/cisagov/pre-commit-packer
-    rev: v0.3.1
-    hooks:
-      - id: packer_fmt
-      - id: packer_validate

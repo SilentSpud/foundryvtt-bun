@@ -7,7 +7,7 @@ ARG FOUNDRY_VERSION
 # patched-base) is built on; it selects the archives tracked by the
 # archive-state stage.
 ARG DEBIAN_SUITE=trixie
-ARG FOUNDRYVTT_CLI_VERSION=3.0.4
+ARG FOUNDRYVTT_CLI_VERSION=3.0.5
 
 # This stage exists solely to track the state of the Debian archives that carry
 # security fixes.  BuildKit revalidates remote ADD sources on every build and

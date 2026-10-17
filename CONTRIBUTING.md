@@ -56,7 +56,7 @@ Common tasks:
 
 | Command | Purpose |
 | ------- | ------- |
-| `bun run typecheck` | Type-check the sources, tests, and tools. |
+| `bun run typecheck` | Type-check the sources, tests, and tools with `bun check`. |
 | `bun test tests/unit` | Run the unit tests. |
 | `bun run image` | Build the container image with `docker buildx bake` (see `docker-bake.hcl`). |
 | `bun run test:container` | Run the container tests against the built image. |

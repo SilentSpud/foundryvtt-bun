@@ -8,11 +8,6 @@
 # crazy-max/ghaction-github-labeler configuration file located at
 # .github/labels.yml.
 
-"ansible :scroll:":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/ansible/**"
-
 "dependencies :game_die:":
   - changed-files:
       - any-glob-to-any-file:
@@ -38,32 +33,12 @@
       - any-glob-to-any-file:
           - .github/workflows/**
 
-"javascript :coffee:":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.js"
-
-"packer :package:":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.pkr.hcl"
-
-"python :snake:":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.py"
-
 "shell script :shell:":
   - changed-files:
       - any-glob-to-any-file:
           # If this project has any shell scripts that do not end in the ".sh"
           # extension, add them below.
           - "**/*.sh"
-
-"terraform :cloud:":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.tf"
 
 "test :test_tube:":
   - changed-files:
