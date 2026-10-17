@@ -12,37 +12,12 @@ defaults:
     shell: bash -Eueo pipefail -x {0}
 
 jobs:
-  diagnostics:
-    name: Run diagnostics
-    permissions: {}
-    runs-on: ubuntu-latest
-    steps:
-      # Every job must start with a copy of this step.
-      - name: Apply standard cisagov job preamble
-        uses: cisagov/action-job-preamble@v1
-        with:
-          check_github_status: "true"
-          # Its MITM proxy hogs or leaks memory (cisagov/skeleton-generic#207).
-          monitor_permissions: "false"
-          output_workflow_context: "true"
-          # Org-level by default; a repo-level ACTIONS_PERMISSIONS_CONFIG overrides it.
-          permissions_monitoring_config: ${{ vars.ACTIONS_PERMISSIONS_CONFIG }}
   label:
-    needs:
-      - diagnostics
     permissions:
-      # Permissions required by actions/labeler
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - name: Apply standard cisagov job preamble
-        uses: cisagov/action-job-preamble@v1
-        with:
-          # Its MITM proxy hogs or leaks memory (cisagov/skeleton-generic#207).
-          monitor_permissions: "false"
-          # Org-level by default; a repo-level ACTIONS_PERMISSIONS_CONFIG overrides it.
-          permissions_monitoring_config: ${{ vars.ACTIONS_PERMISSIONS_CONFIG }}
       - name: Apply suitable labels to a pull request
         uses: actions/labeler@v7
       # actions/labeler matches paths only, and package.json changes with

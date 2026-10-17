@@ -13,12 +13,6 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # tag=v2.22.1
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            api.github.com:443
       - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # tag=v11.0.0
         with:
           days-before-stale: 28

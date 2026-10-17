@@ -37,10 +37,6 @@ permissions:
   security-events: write
 
 jobs:
-  diagnostics:
-    name: Diagnostics
-    uses: felddy/reusable-workflows/.github/workflows/diagnostics.yml@8a2ace3a3358dad0f5269a4c47397d3d03156a20 # tag=v4.2.1
-
   config:
     name: Config
     uses: ./.github/workflows/_config.yml
@@ -51,10 +47,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # tag=v2.22.1
-        with:
-          egress-policy: audit
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
       - name: Set up Bun
@@ -72,10 +64,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # tag=v2.22.1
-        with:
-          egress-policy: audit
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
       - name: Set up Bun
@@ -93,7 +81,6 @@ jobs:
       - config
       - lint
       - unit-test
-      - diagnostics
     # Fork PRs have no secrets and a read-only GITHUB_TOKEN, so pushes would fail.
     if: |
       github.event_name != 'pull_request' ||
@@ -121,7 +108,6 @@ jobs:
       - config
       - lint
       - unit-test
-      - diagnostics
     if: |
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -185,7 +171,6 @@ jobs:
       - config
       - lint
       - unit-test
-      - diagnostics
       - build
       - build-preinstalled
       - test
@@ -201,7 +186,6 @@ jobs:
           [[ "${{ needs.config.result }}"      == success ]] || { echo "config: ${{ needs.config.result }}";           exit 1; }
           [[ "${{ needs.lint.result }}"        == success ]] || { echo "lint: ${{ needs.lint.result }}";               exit 1; }
           [[ "${{ needs['unit-test'].result }}" == success ]] || { echo "unit-test: ${{ needs['unit-test'].result }}"; exit 1; }
-          [[ "${{ needs.diagnostics.result }}" == success ]] || { echo "diagnostics: ${{ needs.diagnostics.result }}"; exit 1; }
           # Skipped on fork PRs, which have no secrets:
           [[ "${{ needs.build.result }}"              =~ ^(success|skipped)$ ]] || { echo "build: ${{ needs.build.result }}";                           exit 1; }
           [[ "${{ needs['build-preinstalled'].result }}" =~ ^(success|skipped)$ ]] || { echo "build-preinstalled: ${{ needs['build-preinstalled'].result }}"; exit 1; }

@@ -1,17 +1,15 @@
 ---
-# Every label here must also be defined in .github/labels.yml.
-
 "dependencies :game_die:":
   - changed-files:
       - any-glob-to-any-file:
-          - bun.lock
-          - package.json
+          - "**/bun.lock"
+          - "**/package.json"
 
 "docker :whale:":
   - changed-files:
       - any-glob-to-any-file:
-          - "**/compose*.yml"
-          - "**/docker-compose*.yml"
+          - "**/compose*.{yml,yaml}"
+          - "**/docker-compose*.{yml,yaml}"
           - "**/Dockerfile*"
 
 "documentation :memo:":
@@ -42,8 +40,3 @@
   - changed-files:
       - any-glob-to-any-file:
           - "**/*.ts"
-
-"upstream :eyes:":
-  - head-branch:
-      # Any Lineage pull requests should use this branch.
-      - lineage/skeleton

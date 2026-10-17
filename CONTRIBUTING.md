@@ -43,12 +43,11 @@ The container's utilities, tests, and tooling are written in TypeScript and
 run with [Bun](https://bun.sh). Install Bun, then run:
 
 ```console
-bun run setup
+bun install
 ```
 
-This installs the project dependencies, installs the git pre-commit hook
-with [husky](https://typicode.github.io/husky/), and configures the git
-remotes for upstream "lineage" repositories.
+This installs the project dependencies and, through the `prepare` script,
+the git pre-commit hook with [husky](https://typicode.github.io/husky/).
 
 Common tasks:
 

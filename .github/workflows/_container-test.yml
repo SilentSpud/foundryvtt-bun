@@ -56,11 +56,6 @@ jobs:
       contents: read
       packages: read
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # tag=v2.22.1
-        with:
-          egress-policy: audit
-
       - name: Log in to registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # tag=v4.6.0
         with:
