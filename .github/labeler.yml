@@ -35,7 +35,6 @@
       - any-glob-to-any-file:
           - .ansible-lint
           - .mdl_config.yaml
-          - .yamllint
           - compose.yml
           - tests/**
 

@@ -1,7 +1,7 @@
 ---
 name: Build
 
-on: # yamllint disable-line rule:truthy
+on:
   merge_group:
     types:
       - checks_requested

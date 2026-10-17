@@ -10,7 +10,7 @@
   "description": "Utilities to help boot a FoundryVTT server.",
   "devDependencies": {
     "@types/bun": "^1.4.3",
-    "prettier": "^3.9.10",
+    "oxfmt": "^0.73.0",
     "typescript": "^7.0.2"
   },
   "homepage": "https://github.com/felddy/foundryvtt-docker#readme",
@@ -30,8 +30,8 @@
   "scripts": {
     "build": "bun tools/build.ts",
     "bump-version": "bun tools/bump_version.ts",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "image": "bun tools/bake.ts",
     "lint": "bun run typecheck && bun run format:check",
     "release": "bun tools/bump_version.ts set",

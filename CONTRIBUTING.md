@@ -62,7 +62,7 @@ Common tasks:
 | `bun run test:container` | Run the container tests against the built image. |
 | `bun run version` | Print the container and Foundry versions. |
 | `bun run release <x.y.z>` | Set a new version and commit it. |
-| `bun run format` | Format the TypeScript sources with Prettier. |
+| `bun run format` | Format the TypeScript and YAML sources with oxfmt. |
 
 The container tests need Docker.  They run without credentials using a fake
 release archive; set `FOUNDRY_USERNAME` and `FOUNDRY_PASSWORD` to also

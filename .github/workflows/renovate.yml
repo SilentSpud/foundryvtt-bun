@@ -1,7 +1,7 @@
 ---
 name: Renovate
 
-on: # yamllint disable-line rule:truthy
+on:
   schedule:
     - cron: 38 */6 * * * # four times a day, offset from the build cron
   workflow_dispatch:

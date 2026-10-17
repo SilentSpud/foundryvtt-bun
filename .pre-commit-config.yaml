@@ -41,22 +41,15 @@ repos:
       - id: markdownlint
         args:
           - --config=.mdl_config.yaml
-  # Prettier runs from the project dependencies so the hook and
+  # oxfmt runs from the project dependencies so the hook and
   # `bun run format` always agree on the version.
   - repo: local
     hooks:
-      - id: prettier
-        name: prettier
+      - id: oxfmt
+        name: oxfmt
         language: system
-        entry: bun x prettier --write --ignore-unknown
-        types:
-          - text
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.38.0
-    hooks:
-      - id: yamllint
-        args:
-          - --strict
+        entry: bun run format
+        pass_filenames: false
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.38.2
