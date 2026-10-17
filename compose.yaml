@@ -16,6 +16,7 @@ services:
     #
     # Long values such as lists and JSON go in .env on one line, for example:
     #   CONTAINER_PATCH_URLS="https://example.com/a.sh https://example.com/b.sh"
+    # yamllint disable-line rule:line-length
     #   FOUNDRY_DEMO_CONFIG='{"worldName": "demo-world", "sourceZip": "/data/demo-world.zip", "resetSeconds": 3600}'
     environment:
       - CONTAINER_CACHE=${CONTAINER_CACHE-/data/container_cache}

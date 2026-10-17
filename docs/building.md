@@ -39,9 +39,9 @@ pre-installed build from a clone, set `FOUNDRY_USERNAME` and
 
 The image supports the `linux/amd64` and `linux/arm64` platforms, the
 architectures for which [Bun](https://bun.sh), which runs Foundry and the
-container's utilities, is published.  To build for a platform other than your own, use
-Docker's [`buildx`](https://docs.docker.com/buildx/working-with-buildx/)
-feature:
+container's utilities, is published.  To build for a platform other than
+your own, use Docker's
+[`buildx`](https://docs.docker.com/buildx/working-with-buildx/) feature:
 
 1. Clone the project:
 
