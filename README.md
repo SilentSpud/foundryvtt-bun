@@ -1,19 +1,18 @@
 <div align="center">
 
 <img width="460"
-  src="https://raw.githubusercontent.com/felddy/foundryvtt-docker/develop/assets/logo.png"
+  src="https://raw.githubusercontent.com/SilentSpud/foundryvtt-docker/main/assets/logo.png"
   alt="Docker whale logo carrying the FoundryVTT icosahedron logo while floating
   in water.">
 </div>
 
 # foundryvtt-docker
 
-[![Build](https://github.com/felddy/foundryvtt-docker/actions/workflows/build.yml/badge.svg)](https://github.com/felddy/foundryvtt-docker/actions/workflows/build.yml)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5966/badge)](https://bestpractices.coreinfrastructure.org/projects/5966)
+[![Build](https://github.com/SilentSpud/foundryvtt-docker/actions/workflows/build.yml/badge.svg)](https://github.com/SilentSpud/foundryvtt-docker/actions/workflows/build.yml)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 [![FoundryVTT Release Version: v14.369](https://img.shields.io/badge/release-v14.369-brightgreen?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAIRlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAA6gAwAEAAAAAQAAAA4AAAAATspU+QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAAAiFJREFUKBVVks1rE1EUxc+d5tO0prZVSZsUhSBIPyC02ooWurJ0I7rQlRvdC/4N4h9gt7pyoRTswpWgILgQBIOIiC340VhbpC0Ek85MGmPmXc+baWpNGJg77/7uOffeB+z9FHB0FrH9eLwwqpOF0f34KrpsTicW+6L8KE8QhO/n8n1IOgtQHYZA+a/Ai9+Wd6v1g7liq5A2OjKSQNa9hkO4hAzOIylf6CHALk6hoWXsylPkfjyyApaJhVCxmERy5zLSuI7D8h1H5BWht1aBhS6wdI3pN7GabyuyS4JPrchzujmNjDxAVrrRL2PoxRSGxOfjssgEjkkJvVJBWu6h5M7YenvDoOO0OgicD4TPIKWbBG6xvwTaKCMwSU7hKxK6gt8mbsFIMaF5iDyjUg6iPnqc58higCr9fD4iTvWMziAmK2g73f/AADVWX0YXrlChirgOcqL3WXYBYpTfUuxzjkW30dI1C0ZW1RnjMopo4C56MIs6CgQrMER2cJoz9zjdO2iz17g2yZUjqzHWbuA4/ugiEz7DVRe/aLxmcvDQ5Cq+oWGWeDbAgiETXgArrVOFGzR0EkclxrVMcpfLgFThY5roe2yz95ZZkzcbj22+w2VG8Pz6Q/b5Gr6uM9mw04uo6ll4tOlhE8a8xNzGYihCJoT+u3I4kUIp6OM0X9CHHds8frbqsrXlh9CB62nj8L5a9Y4DHR/K68TgcHhoz607Qp34L72X0rdSdM+vAAAAAElFTkSuQmCC)](https://foundryvtt.com/releases/14.369)
-[![Platforms](https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-blue)](https://github.com/felddy/foundryvtt-docker/pkgs/container/foundryvtt)
+[![Platforms](https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-blue)](https://github.com/SilentSpud/foundryvtt-docker/pkgs/container/foundryvtt-bun)
 
 You can get a [Foundry Virtual Tabletop](https://foundryvtt.com) instance up and
 running in minutes using this container. This image is designed to be secure,
@@ -46,7 +45,7 @@ docker run \
   --hostname my_foundry_host \
   --publish 30000:30000/tcp \
   --volume <your_data_dir>:/data \
-  ghcr.io/felddy/foundryvtt:14
+  ghcr.io/silentspud/foundryvtt-bun:14
 ```
 
 Then open [http://localhost:30000](http://localhost:30000).
@@ -125,21 +124,21 @@ Virtual Tabletop](https://foundryvtt.com/article/versioning/) that they support.
 > is compatible with your saved data, and prevents inadvertent upgrades to a new
 > major version.
 
-| Image:tag                            | Description                                                                                                                                                                |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ghcr.io/felddy/foundryvtt:14`       | The most recent image matching the major version number. Most users will use this tag.                                                                                     |
-| `ghcr.io/felddy/foundryvtt:14.369`   | The most recent image matching the major and minor version numbers.                                                                                                        |
-| `ghcr.io/felddy/foundryvtt:14.369.0` | An exact image version.                                                                                                                                                    |
-| `ghcr.io/felddy/foundryvtt:release`  | The most recent image from the `stable` channel. These images are **considered stable**, and well-tested. The `latest` tag always points to the same version as `release`. |
-| `ghcr.io/felddy/foundryvtt:latest`   | Same as the `release` tag. [Why does `latest` == `release`?](https://vsupalov.com/docker-latest-tag/)                                                                      |
+| Image:tag                                    | Description                                                                                                                                                                |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ghcr.io/silentspud/foundryvtt-bun:14`       | The most recent image matching the major version number. Most users will use this tag.                                                                                     |
+| `ghcr.io/silentspud/foundryvtt-bun:14.369`   | The most recent image matching the major and minor version numbers.                                                                                                        |
+| `ghcr.io/silentspud/foundryvtt-bun:14.369.0` | An exact image version.                                                                                                                                                    |
+| `ghcr.io/silentspud/foundryvtt-bun:release`  | The most recent image from the `stable` channel. These images are **considered stable**, and well-tested. The `latest` tag always points to the same version as `release`. |
+| `ghcr.io/silentspud/foundryvtt-bun:latest`   | Same as the `release` tag. [Why does `latest` == `release`?](https://vsupalov.com/docker-latest-tag/)                                                                      |
 
-See the [packages page](https://github.com/felddy/foundryvtt-docker/pkgs/container/foundryvtt)
+See the [packages page](https://github.com/SilentSpud/foundryvtt-docker/pkgs/container/foundryvtt-bun)
 for a complete list of available tags.
 
 > [!NOTE]
 > Stable releases are also mirrored to [Docker
-> Hub](https://hub.docker.com/repository/docker/felddy/foundryvtt) and can be
-> referenced using the full registry path: `docker.io/felddy/foundryvtt:14`
+> Hub](https://hub.docker.com/r/silentspud/foundryvtt-bun) and can be
+> referenced using the full registry path: `docker.io/silentspud/foundryvtt-bun:14`
 
 ## Volumes
 

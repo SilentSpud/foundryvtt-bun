@@ -1,7 +1,7 @@
 ---
 services:
   foundry:
-    image: ghcr.io/felddy/foundryvtt:14
+    image: ghcr.io/silentspud/foundryvtt-bun:14
     hostname: my_foundry_host
     environment:
       - FOUNDRY_HOSTNAME=<vtt.example.com>

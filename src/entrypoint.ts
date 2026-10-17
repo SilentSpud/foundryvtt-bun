@@ -237,7 +237,7 @@ function writeCacheTag(cacheDir: string): void {
     writeFileSync(
         `${cacheDir}/CACHEDIR.TAG`,
         `Signature: ${signature}\n` +
-            "# This file is a cache directory tag created by the felddy/foundryvtt container\n" +
+            "# This file is a cache directory tag created by the silentspud/foundryvtt-bun container\n" +
             "# https://github.com/felddy/foundryvtt-docker\n" +
             "# For information about cache directory tags see https://bford.info/cachedir/\n",
     );
@@ -692,7 +692,7 @@ async function run(args: string[]): Promise<number> {
         }
     }
 
-    log.info(`Starting felddy/foundryvtt container v${imageVersion}`);
+    log.info(`Starting silentspud/foundryvtt-bun container v${imageVersion}`);
     log.debug("CONTAINER_VERBOSE set.  Debug logging enabled.");
     log.debug(
         `Running as: uid=${process.getuid?.()} gid=${process.getgid?.()}`,
@@ -712,7 +712,7 @@ async function run(args: string[]): Promise<number> {
 
     testVolumePermissions();
 
-    const userAgent = `${DEFAULT_USER_AGENT} (felddy/foundryvtt:${imageVersion})`;
+    const userAgent = `${DEFAULT_USER_AGENT} (silentspud/foundryvtt-bun:${imageVersion})`;
 
     // The container version is a semver x.y.z; FOUNDRY_VERSION looks like x.yyy.
     const expected = imageVersion.replace(/\.[^.]*$/, "");

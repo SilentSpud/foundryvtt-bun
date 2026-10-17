@@ -13,8 +13,8 @@ Build the image using this git repository as the
 docker build \
   --build-arg CONTAINER_VERSION=14.369.0 \
   --build-arg FOUNDRY_VERSION=14.369 \
-  --tag ghcr.io/felddy/foundryvtt:14.369.0 \
-  https://github.com/felddy/foundryvtt-docker.git#develop
+  --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
+  https://github.com/SilentSpud/foundryvtt-docker.git#main
 ```
 
 ## Building from a clone
@@ -24,7 +24,7 @@ run with [Bun](https://bun.sh), which supplies the versions from the
 `version` field in `package.json`:
 
 ```console
-git clone https://github.com/felddy/foundryvtt-docker.git
+git clone https://github.com/SilentSpud/foundryvtt-docker.git
 cd foundryvtt-docker
 bun run image                    # the image for your platform
 bun run image multiarch --push   # every published platform
@@ -46,7 +46,7 @@ feature:
 1. Clone the project:
 
    ```console
-   git clone https://github.com/felddy/foundryvtt-docker.git
+   git clone https://github.com/SilentSpud/foundryvtt-docker.git
    cd foundryvtt-docker
    ```
 
@@ -58,7 +58,7 @@ feature:
      --build-arg CONTAINER_VERSION=14.369.0 \
      --build-arg FOUNDRY_VERSION=14.369 \
      --output type=docker \
-     --tag ghcr.io/felddy/foundryvtt:14.369.0 .
+     --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 .
    ```
 
 ## Pre-installed distribution builds
@@ -80,8 +80,8 @@ docker build \
   --build-arg FOUNDRY_VERSION=14.369 \
   --secret id=foundry_username,src=<(echo "<your_username>") \
   --secret id=foundry_password,src=<(echo "<your_password>") \
-  --tag ghcr.io/felddy/foundryvtt:14.369.0 \
-  https://github.com/felddy/foundryvtt-docker.git#develop
+  --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
+  https://github.com/SilentSpud/foundryvtt-docker.git#main
 ```
 
 > [!TIP]
@@ -95,8 +95,8 @@ docker build \
 >   --build-arg FOUNDRY_VERSION=14.369 \
 >   --secret id=foundry_username,src=<(jq -r '.foundry_username' path/to/credentials.json) \
 >   --secret id=foundry_password,src=<(jq -r '.foundry_password' path/to/credentials.json) \
->   --tag ghcr.io/felddy/foundryvtt:14.369.0 \
->   https://github.com/felddy/foundryvtt-docker.git#develop
+>   --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
+>   https://github.com/SilentSpud/foundryvtt-docker.git#main
 > ```
 
 More information about Docker build secrets is in the
@@ -109,6 +109,6 @@ docker build \
   --build-arg CONTAINER_VERSION=14.369.0 \
   --build-arg FOUNDRY_VERSION=14.369 \
   --build-arg FOUNDRY_RELEASE_URL='<temporary_url>' \
-  --tag ghcr.io/felddy/foundryvtt:14.369.0 \
-  https://github.com/felddy/foundryvtt-docker.git#develop
+  --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
+  https://github.com/SilentSpud/foundryvtt-docker.git#main
 ```

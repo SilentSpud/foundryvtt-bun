@@ -21,7 +21,7 @@ variable "FOUNDRY_VERSION" {
 }
 
 variable "IMAGE" {
-  default = "ghcr.io/felddy/foundryvtt"
+  default = "ghcr.io/silentspud/foundryvtt-bun"
 }
 
 variable "FOUNDRY_RELEASE_URL" {

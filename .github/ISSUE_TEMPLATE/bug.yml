@@ -4,7 +4,7 @@ description: File a bug report
 labels:
   - "bug :bug:"
 assignees:
-  - felddy
+  - SilentSpud
 body:
   - type: markdown
     attributes:
@@ -49,7 +49,7 @@ body:
         ```bash
         docker inspect --format='{{range $k, $v := .Config.Labels}}
             {{- printf "%s = \"%s\"\n" $k $v -}} {{end}}' \
-            felddy/foundryvtt:release
+            silentspud/foundryvtt-bun:release
         ```
   - type: textarea
     id: container-metadata
@@ -64,9 +64,9 @@ body:
         org.opencontainers.image.description = "An easy-to-deploy containerized Foundry Virtual Tabletop server."
         org.opencontainers.image.licenses = "MIT"
         org.opencontainers.image.revision = "94d5cc47fc0c5ac5ae268988c6673c046e39e6b6"
-        org.opencontainers.image.source = "https://github.com/felddy/foundryvtt-docker"
+        org.opencontainers.image.source = "https://github.com/SilentSpud/foundryvtt-docker"
         org.opencontainers.image.title = "foundryvtt-docker"
-        org.opencontainers.image.url = "https://github.com/felddy/foundryvtt-docker"
+        org.opencontainers.image.url = "https://github.com/SilentSpud/foundryvtt-docker"
         org.opencontainers.image.vendor = "Geekpad"
         org.opencontainers.image.version = "x.y.z"
     validations:
@@ -79,7 +79,7 @@ body:
       render: console
       placeholder: |
         foundry_1   | Entrypoint | 2022-02-23 14:14:53 | [debug] Timezone set to: US/Eastern
-        foundry_1   | Entrypoint | 2022-02-23 14:14:53 | [info] Starting felddy/foundryvtt container vx.y.z
+        foundry_1   | Entrypoint | 2022-02-23 14:14:53 | [info] Starting silentspud/foundryvtt-bun container vx.y.z
         foundry_1   | Entrypoint | 2022-02-23 14:14:53 | [debug] CONTAINER_VERBOSE set.  Debug logging enabled.
         foundry_1   | Entrypoint | 2022-02-23 14:14:53 | [info] Reading configured secrets from: /run/secrets/config.json
         foundry_1   | Entrypoint | 2022-02-23 14:14:53 | [info] No Foundry Virtual Tabletop installation detected.
@@ -91,7 +91,7 @@ body:
     id: terms
     attributes:
       label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/felddy/foundryvtt-docker/blob/develop/CODE_OF_CONDUCT.md)
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/SilentSpud/foundryvtt-docker/blob/main/CODE_OF_CONDUCT.md)
       options:
         - label: I agree to follow this project's Code of Conduct
           required: true

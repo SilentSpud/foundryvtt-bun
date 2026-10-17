@@ -21,7 +21,7 @@ podman run \
   --hostname my_foundry_host \
   --publish 30000:30000/tcp \
   --volume ./data:/data:Z \
-  ghcr.io/felddy/foundryvtt:14
+  ghcr.io/silentspud/foundryvtt-bun:14
 ```
 
 > [!IMPORTANT]
@@ -56,7 +56,7 @@ Create `~/.config/containers/systemd/foundry.container`:
 Description=Foundry Virtual Tabletop
 
 [Container]
-Image=ghcr.io/felddy/foundryvtt:14
+Image=ghcr.io/silentspud/foundryvtt-bun:14
 HostName=my_foundry_host
 PublishPort=30000:30000/tcp
 Volume=%h/foundry/data:/data:Z

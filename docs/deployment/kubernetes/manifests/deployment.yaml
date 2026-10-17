@@ -33,7 +33,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: foundry
-          image: ghcr.io/felddy/foundryvtt:14
+          image: ghcr.io/silentspud/foundryvtt-bun:14
           # The major tag is a moving target; always re-pull so a rollout picks
           # up the newest compatible release.
           imagePullPolicy: Always

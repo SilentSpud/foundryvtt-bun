@@ -1,7 +1,7 @@
 ---
 services:
   foundry:
-    image: ghcr.io/felddy/foundryvtt:release
+    image: ghcr.io/silentspud/foundryvtt-bun:release
     hostname: my_foundry_host
     volumes:
       - type: bind

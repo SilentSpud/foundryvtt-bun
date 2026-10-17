@@ -5,7 +5,8 @@ import { containerVersion } from "../../tools/version.ts";
 export const PROJECT_VERSION = containerVersion();
 /** The image under test; defaults to the tag `bun run image` builds. */
 export const IMAGE =
-    process.env.IMAGE_TAG || `ghcr.io/felddy/foundryvtt:${PROJECT_VERSION}`;
+    process.env.IMAGE_TAG ||
+    `ghcr.io/silentspud/foundryvtt-bun:${PROJECT_VERSION}`;
 export const FOUNDRY_VERSION = PROJECT_VERSION.split(".").slice(0, 2).join(".");
 export const READY_MESSAGE = "Server started and listening on port";
 

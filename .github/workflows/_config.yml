@@ -21,10 +21,10 @@ on:
         value: ${{ jobs.config.outputs.foundry_version }}
       image_name:
         description: The container image name
-        value: felddy/foundryvtt
+        value: ${{ jobs.config.outputs.image_name }}
       image_name_preinstall:
         description: The pre-install container image name
-        value: felddy/foundryvtt-preinstall
+        value: ${{ jobs.config.outputs.image_name_preinstall }}
       platforms:
         description: The platforms to build (JSON array string)
         value: ${{ inputs.platforms }}
@@ -41,7 +41,15 @@ jobs:
     outputs:
       container_version: ${{ steps.version.outputs.container_version }}
       foundry_version: ${{ steps.version.outputs.foundry_version }}
+      image_name: ${{ steps.image.outputs.name }}
+      image_name_preinstall: ${{ steps.image.outputs.name }}-preinstall
     steps:
+      # Registries require lowercase names, and expressions cannot lowercase.
+      - name: Derive image names from the repository owner
+        id: image
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "name=${OWNER,,}/foundryvtt-bun" >> "$GITHUB_OUTPUT"
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
       - name: Set up Bun

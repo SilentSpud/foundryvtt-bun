@@ -30,7 +30,7 @@ README.
    ---
    services:
      foundry:
-       image: ghcr.io/felddy/foundryvtt:14
+       image: ghcr.io/silentspud/foundryvtt-bun:14
        hostname: my_foundry_host
        environment:
          - FOUNDRY_USERNAME=<your_username>
@@ -93,7 +93,7 @@ reach the container.
    ---
    services:
      foundry:
-       image: ghcr.io/felddy/foundryvtt:14
+       image: ghcr.io/silentspud/foundryvtt-bun:14
        hostname: my_foundry_host
        environment:
          - FOUNDRY_USERNAME=${FOUNDRY_USERNAME:-}
@@ -139,7 +139,7 @@ inside the container. See the [secrets] reference for every supported key.
 
    services:
      foundry:
-       image: ghcr.io/felddy/foundryvtt:14
+       image: ghcr.io/silentspud/foundryvtt-bun:14
        hostname: my_foundry_host
        environment:
          - FOUNDRY_TELEMETRY=true
