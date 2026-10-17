@@ -60,7 +60,7 @@ Common tasks:
 | `bun run version`         | Print the container and Foundry versions.                                    |
 | `bun run release <x.y.z>` | Set a new version in `package.json`; commit it and open a pull request.      |
 | `bun run format`          | Format the TypeScript, YAML, JSON, and Markdown files with oxfmt.            |
-| `bun run lint`            | Run the type check, format check, and file checks, as CI does.               |
+| `bun run lint`            | Run the type check, oxlint, format check, and file checks, as CI does.       |
 
 The container tests need Docker. They run without credentials using a fake
 release archive; set `FOUNDRY_USERNAME` and `FOUNDRY_PASSWORD` to also

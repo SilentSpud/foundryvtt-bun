@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "env": {
+    "builtin": true,
+    "es2024": true,
+    "node": true
+  },
+  "plugins": ["import", "oxc", "typescript", "unicorn"],
+  "rules": {
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-sort": "off"
+  }
+}

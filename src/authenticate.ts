@@ -26,7 +26,9 @@ await runCli(logger, async () => {
     try {
         await session.login(username.toLowerCase(), password);
     } catch (err) {
-        throw new Error(`Unable to authenticate: ${(err as Error).message}`);
+        throw new Error(`Unable to authenticate: ${(err as Error).message}`, {
+            cause: err,
+        });
     }
     logger.debug(`Saving cookies to: ${cookiejar}`);
     session.save(cookiejar);

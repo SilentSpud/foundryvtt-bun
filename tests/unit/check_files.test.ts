@@ -49,7 +49,7 @@ describe("checkFile", () => {
 
     test("branch permalinks", () => {
         // Built from parts so this file does not trip the check itself.
-        const blob = "https://github.com/o/r/" + "blob/";
+        const blob = ["https://github.com/o/r", "blob", ""].join("/");
         expect(check(`${blob}${"a".repeat(40)}/x.ts#L10\n`)).toEqual([]);
         expect(check(`${blob}main/x.ts#L10\n`)).toEqual([
             "dir/file.txt:1: line link to a branch; pin a commit SHA",
