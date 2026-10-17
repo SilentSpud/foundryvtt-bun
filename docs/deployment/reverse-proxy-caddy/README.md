@@ -1,17 +1,17 @@
-# Foundry VTT behind a Caddy reverse proxy #
+# Foundry VTT behind a Caddy reverse proxy
 
 This recipe puts Foundry behind [Caddy], which provisions and renews a free TLS
 certificate automatically, so the server is reachable over HTTPS with almost no
 configuration.
 
-## Notable features ##
+## Notable features
 
 - Two services defined in a single Compose file.
 - Automatic HTTPS with free, auto-renewing [Let's Encrypt] certificates.
 - WebSockets (which Foundry requires) proxied transparently.
 - Foundry data and Caddy certificates persist on disk.
 
-## Diagram ##
+## Diagram
 
 ```mermaid
 graph LR
@@ -23,7 +23,7 @@ graph LR
     end
 ```
 
-## Prerequisites ##
+## Prerequisites
 
 - A host with [Docker Compose](../docker-compose.md) (or
   [Podman](../podman.md)).
@@ -31,7 +31,7 @@ graph LR
 - Inbound TCP `80` and `443` (and UDP `443` for HTTP/3) reachable from the
   internet — Caddy needs them to obtain certificates.
 
-## Deploy ##
+## Deploy
 
 1. Create the following layout using the
    [`compose.yaml`](compose.yaml), [`Caddyfile`](Caddyfile), and
@@ -61,7 +61,7 @@ graph LR
 1. Browse to your domain over HTTPS, for example `https://vtt.example.com`.
    Caddy obtains a certificate on first request, which can take a few seconds.
 
-## How it works ##
+## How it works
 
 - Caddy terminates TLS and proxies plain HTTP to the Foundry service; the
   address in the [`Caddyfile`](Caddyfile) is supplied by the `SITE_ADDRESS`

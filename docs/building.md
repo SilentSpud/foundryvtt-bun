@@ -1,10 +1,10 @@
-# Building the image #
+# Building the image
 
 Most users never need to build the image — pull a published tag as described in
-the [project README](../README.md).  This guide is for contributors and for the
+the [project README](../README.md). This guide is for contributors and for the
 rare case where a locally built or pre-loaded image is useful.
 
-## Building from source ##
+## Building from source
 
 Build the image using this git repository as the
 [build context](https://docs.docker.com/engine/reference/commandline/build/#git-repositories):
@@ -17,7 +17,7 @@ docker build \
   https://github.com/felddy/foundryvtt-docker.git#develop
 ```
 
-## Building from a clone ##
+## Building from a clone
 
 The image builds are defined in [`docker-bake.hcl`](../docker-bake.hcl) and
 run with [Bun](https://bun.sh), which supplies the versions from
@@ -30,16 +30,16 @@ bun run image                    # the image for your platform
 bun run image multiarch --push   # every published platform
 ```
 
-Arguments after `bun run image` are passed to `docker buildx bake`.  For a
+Arguments after `bun run image` are passed to `docker buildx bake`. For a
 pre-installed build from a clone, set `FOUNDRY_USERNAME` and
 `FOUNDRY_PASSWORD` (or `FOUNDRY_RELEASE_URL`) in the environment and run
 `bun run image preinstall`.
 
-## Cross-platform builds ##
+## Cross-platform builds
 
 The image supports the `linux/amd64` and `linux/arm64` platforms, the
 architectures for which [Bun](https://bun.sh), which runs Foundry and the
-container's utilities, is published.  To build for a platform other than
+container's utilities, is published. To build for a platform other than
 your own, use Docker's
 [`buildx`](https://docs.docker.com/buildx/working-with-buildx/) feature:
 
@@ -61,14 +61,14 @@ your own, use Docker's
       --tag ghcr.io/felddy/foundryvtt:14.369.0 .
     ```
 
-## Pre-installed distribution builds ##
+## Pre-installed distribution builds
 
 A Foundry Virtual Tabletop distribution can be installed into the image at
-build time.  The resulting image is significantly larger, but it starts faster
+build time. The resulting image is significantly larger, but it starts faster
 because nothing is downloaded at startup, and authentication happens at build
 time rather than at run time.
 
-### Build with credentials ###
+### Build with credentials
 
 > [!NOTE]
 > Credentials are only used to fetch a distribution; they are not stored in the
@@ -102,7 +102,7 @@ docker build \
 More information about Docker build secrets is in the
 [Docker documentation](https://docs.docker.com/build/building/secrets/).
 
-### Build with a temporary URL ###
+### Build with a temporary URL
 
 ```console
 docker build \

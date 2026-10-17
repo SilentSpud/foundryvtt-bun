@@ -3,7 +3,7 @@ name: Config
 
 permissions: {}
 
-on: # yamllint disable-line rule:truthy
+on:
   workflow_call:
     inputs:
       platforms:

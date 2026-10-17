@@ -1,17 +1,17 @@
-# Deploying with Podman #
+# Deploying with Podman
 
 [Podman] runs the image without a daemon and, by default, as a rootless user.
 The image is [OCI] compliant, so everything in the
 [Docker Compose guide](docker-compose.md) applies here too: `podman` mirrors the
-`docker` command line, and `podman compose` reads the same `compose.yaml`.  This
+`docker` command line, and `podman compose` reads the same `compose.yaml`. This
 guide focuses on the Podman-specific details.
 
-## Prerequisites ##
+## Prerequisites
 
 - [Podman] 4.4 or newer (Quadlet support).
 - A [foundryvtt.com] account with a purchased software license.
 
-## Running with `podman run` ##
+## Running with `podman run`
 
 ```console
 podman run \
@@ -25,14 +25,14 @@ podman run \
 ```
 
 > [!IMPORTANT]
-> Always set `--hostname`.  Foundry binds its software license to the container
+> Always set `--hostname`. Foundry binds its software license to the container
 > hostname; without a stable value, license verification fails after each
 > restart.
 
-### Rootless notes ###
+### Rootless notes
 
 - **Volume permissions.** The container runs as a non-root user (UID/GID
-  `1000`).  Rootless Podman maps that to a subordinate UID on the host, so make
+  `1000`). Rootless Podman maps that to a subordinate UID on the host, so make
   the data directory writable inside the user namespace:
 
     ```console
@@ -42,11 +42,11 @@ podman run \
 - **SELinux.** On SELinux systems, add the `:Z` suffix to bind mounts (as shown
   above) so Podman relabels the content for container access.
 
-- **Low ports.** Rootless Podman cannot bind host ports below `1024`.  Publish a
+- **Low ports.** Rootless Podman cannot bind host ports below `1024`. Publish a
   high port and let a [reverse proxy](reverse-proxy-caddy/README.md) terminate
   `80`/`443`, or lower `net.ipv4.ip_unprivileged_port_start`.
 
-## Running as a `systemd` service (Quadlet) ##
+## Running as a `systemd` service (Quadlet)
 
 For a server that starts at boot, describe it as a [Quadlet] `.container` unit.
 Create `~/.config/containers/systemd/foundry.container`:
@@ -82,31 +82,31 @@ systemctl --user start foundry
 The `Secret=` line mounts the secret at `/run/secrets/config.json`, where the
 image expects it.
 
-## Using Compose ##
+## Using Compose
 
 `podman compose` (or the `podman-compose` package) runs the examples from the
 [Docker Compose guide](docker-compose.md) and the recipes unchanged — substitute
 `podman compose` for `docker compose`.
 
-## Updating ##
+## Updating
 
-The in-application "Update Software" tab is disabled in this image.  For
+The in-application "Update Software" tab is disabled in this image. For
 containers started with `podman run` or Compose, pull a fresh image and
-recreate the container.  Quadlet units can keep themselves current: add
+recreate the container. Quadlet units can keep themselves current: add
 `AutoUpdate=registry` to the `[Container]` section and the
 `podman-auto-update.timer` will re-pull the `:14` tag and
-restart the service whenever a new image is published.  To update on demand
+restart the service whenever a new image is published. To update on demand
 instead, run:
 
 ```console
 podman auto-update
 ```
 
-## nerdctl and containerd ##
+## nerdctl and containerd
 
 [nerdctl] offers the same Docker-compatible command line on top of
-[containerd].  The `podman run` and Compose examples translate directly; swap
-`podman` (or `docker`) for `nerdctl`.  The low-level `ctr` client is not
+[containerd]. The `podman run` and Compose examples translate directly; swap
+`podman` (or `docker`) for `nerdctl`. The low-level `ctr` client is not
 recommended for day-to-day use.
 
 [OCI]: https://opencontainers.org/

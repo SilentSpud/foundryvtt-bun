@@ -12,7 +12,6 @@
     "getuid",
     "ghaction",
     "healthcheck",
-    "markdownlint",
     "noipdiscovery",
     "noupdate",
     "octocat",

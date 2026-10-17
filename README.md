@@ -6,7 +6,7 @@
   in water.">
 </div>
 
-# foundryvtt-docker #
+# foundryvtt-docker
 
 [![Build](https://github.com/felddy/foundryvtt-docker/actions/workflows/build.yml/badge.svg)](https://github.com/felddy/foundryvtt-docker/actions/workflows/build.yml)
 [![CodeQL](https://github.com/felddy/foundryvtt-docker/workflows/CodeQL/badge.svg)](https://github.com/felddy/foundryvtt-docker/actions/workflows/codeql-analysis.yml)
@@ -18,26 +18,26 @@
 [![Platforms](https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-blue)](https://github.com/felddy/foundryvtt-docker/pkgs/container/foundryvtt)
 
 You can get a [Foundry Virtual Tabletop](https://foundryvtt.com) instance up and
-running in minutes using this container.  This image is designed to be secure,
-reliable, compact, and simple to use.  It only requires that you provide the
+running in minutes using this container. This image is designed to be secure,
+reliable, compact, and simple to use. It only requires that you provide the
 credentials or URL needed to download a Foundry Virtual Tabletop distribution.
 
 This README is the reference for the image itself — its
 [tags](#image-tags), [volumes](#volumes), [ports](#ports),
-[environment variables](#environment-variables), and [secrets](#secrets).  For
+[environment variables](#environment-variables), and [secrets](#secrets). For
 step-by-step setups on a particular platform, see the
 [deployment guides](#deployment-guides).
 
-## Prerequisites ##
+## Prerequisites
 
 - An OCI-compatible container runtime such as [Kubernetes](https://kubernetes.io/),
   [Podman](https://podman.io/), or [Docker](https://docs.docker.com/get-docker/).
 - A [FoundryVTT.com](https://foundryvtt.com/auth/register/) account with a purchased
   software license.
 
-## Quick start ##
+## Quick start
 
-The fastest way to see the server running is a single command.  Your
+The fastest way to see the server running is a single command. Your
 [foundryvtt.com](https://foundryvtt.com) credentials let the container install
 and license your server:
 
@@ -54,68 +54,68 @@ docker run \
 Then open [http://localhost:30000](http://localhost:30000).
 
 > [!TIP]
-> Don't want to share your password with the container?  Acquire a temporary
+> Don't want to share your password with the container? Acquire a temporary
 > download URL from the [Purchased Software Licenses
 > page](https://foundryvtt.com/me/licenses) (set `Operating System` to
 > `Node.js`, then use the `🔗 Timed URL` button) and pass it as
-> `FOUNDRY_RELEASE_URL` instead of your username and password.  Sensitive values
+> `FOUNDRY_RELEASE_URL` instead of your username and password. Sensitive values
 > can also be supplied as [secrets](#using-secrets).
 
-This is enough to try things out.  For a durable, real-world deployment, pick a
+This is enough to try things out. For a durable, real-world deployment, pick a
 [deployment guide](#deployment-guides) below.
 
-## Configuration ##
+## Configuration
 
 [Configuration options](https://foundryvtt.com/article/configuration/) are
-supplied through [environment variables](#environment-variables).  Each time the
+supplied through [environment variables](#environment-variables). Each time the
 container starts, it generates the configuration files Foundry needs from the
-values of those variables.  This means **changes made in the in-application
-configuration GUI do not persist between container restarts**.  Manage
+values of those variables. This means **changes made in the in-application
+configuration GUI do not persist between container restarts**. Manage
 configuration through your runtime's environment settings — a `compose.yaml`
-file, a Kubernetes manifest, or similar.  To disable the regeneration of these
+file, a Kubernetes manifest, or similar. To disable the regeneration of these
 files, set `CONTAINER_PRESERVE_CONFIG` to `true`.
 
 > [!IMPORTANT]
 > Always set a stable hostname for the container (`hostname:` in a `compose.yaml`
 > file, `--hostname` for `docker`/`podman`, or `hostname:` in a pod spec).
-> Foundry binds its software license to the container hostname.  If no hostname
+> Foundry binds its software license to the container hostname. If no hostname
 > is set, the runtime assigns a random container ID on each start, causing
 > license verification to fail after every restart.
 
-## Using secrets ##
+## Using secrets
 
 Sensitive values — your credentials, admin key, or license key — can be supplied
-through a secret file instead of environment variables.  The file may have any
-name, but it must be presented to the container as `config.json`.  See the
+through a secret file instead of environment variables. The file may have any
+name, but it must be presented to the container as `config.json`. See the
 [secrets](#secrets) reference below for the full list of supported keys, and the
 [deployment guides](#deployment-guides) for how to wire up a secret on your
 runtime.
 
-## Deployment guides ##
+## Deployment guides
 
 The [deployment guides](docs/deployment/README.md) cover each runtime in depth
-and include worked networking examples.  The image is the same everywhere; these
+and include worked networking examples. The image is the same everywhere; these
 guides show how to run it well on a given platform.
 
-| Guide | Description |
-| ----- | ----------- |
-| [Kubernetes](docs/deployment/kubernetes/README.md) | Cluster deployment, including running multiple Foundry instances. |
-| [Podman](docs/deployment/podman.md) | Daemonless and rootless, optionally managed by `systemd`. |
-| [Docker Compose](docs/deployment/docker-compose.md) | Single-host setup with the image, configuration, storage, and ports in one file. |
-| [Reverse proxy with Caddy](docs/deployment/reverse-proxy-caddy/README.md) | Automatic HTTPS in front of the server. |
-| [Reverse proxy with nginx](docs/deployment/reverse-proxy-nginx/README.md) | TLS termination with certificates you already have. |
-| [Cloudflare Tunnel](docs/deployment/cloudflare-tunnel/README.md) | Public access without port forwarding or NAT. |
+| Guide                                                                     | Description                                                                      |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [Kubernetes](docs/deployment/kubernetes/README.md)                        | Cluster deployment, including running multiple Foundry instances.                |
+| [Podman](docs/deployment/podman.md)                                       | Daemonless and rootless, optionally managed by `systemd`.                        |
+| [Docker Compose](docs/deployment/docker-compose.md)                       | Single-host setup with the image, configuration, storage, and ports in one file. |
+| [Reverse proxy with Caddy](docs/deployment/reverse-proxy-caddy/README.md) | Automatic HTTPS in front of the server.                                          |
+| [Reverse proxy with nginx](docs/deployment/reverse-proxy-nginx/README.md) | TLS termination with certificates you already have.                              |
+| [Cloudflare Tunnel](docs/deployment/cloudflare-tunnel/README.md)          | Public access without port forwarding or NAT.                                    |
 
-## Updating ##
+## Updating
 
-The Foundry "Update Software" tab is disabled by default in this container.  To
+The Foundry "Update Software" tab is disabled by default in this container. To
 upgrade to a new version of Foundry, pull an updated image and recreate the
-container.  Because the recommended `:14` tag tracks the latest
+container. Because the recommended `:14` tag tracks the latest
 release for that major version, pulling it fetches the newest version compatible
-with your data.  Your [deployment guide](#deployment-guides) lists the exact
+with your data. Your [deployment guide](#deployment-guides) lists the exact
 commands for your runtime.
 
-## Image tags ##
+## Image tags
 
 The images of this container are tagged with [semantic
 versions](https://semver.org) that align with the [version and build of Foundry
@@ -127,13 +127,13 @@ Virtual Tabletop](https://foundryvtt.com/article/versioning/) that they support.
 > is compatible with your saved data, and prevents inadvertent upgrades to a new
 > major version.
 
-| Image:tag | Description |
-| ----------- | ------------- |
-| `ghcr.io/felddy/foundryvtt:14` | The most recent image matching the major version number.  Most users will use this tag. |
-| `ghcr.io/felddy/foundryvtt:14.369` | The most recent image matching the major and minor version numbers. |
-| `ghcr.io/felddy/foundryvtt:14.369.0` | An exact image version. |
-| `ghcr.io/felddy/foundryvtt:release` | The most recent image from the `stable` channel.  These images are **considered stable**, and well-tested.  The `latest` tag always points to the same version as `release`. |
-| `ghcr.io/felddy/foundryvtt:latest` | Same as the `release` tag.  [Why does `latest` == `release`?](https://vsupalov.com/docker-latest-tag/) |
+| Image:tag                            | Description                                                                                                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ghcr.io/felddy/foundryvtt:14`       | The most recent image matching the major version number. Most users will use this tag.                                                                                     |
+| `ghcr.io/felddy/foundryvtt:14.369`   | The most recent image matching the major and minor version numbers.                                                                                                        |
+| `ghcr.io/felddy/foundryvtt:14.369.0` | An exact image version.                                                                                                                                                    |
+| `ghcr.io/felddy/foundryvtt:release`  | The most recent image from the `stable` channel. These images are **considered stable**, and well-tested. The `latest` tag always points to the same version as `release`. |
+| `ghcr.io/felddy/foundryvtt:latest`   | Same as the `release` tag. [Why does `latest` == `release`?](https://vsupalov.com/docker-latest-tag/)                                                                      |
 
 See the [packages page](https://github.com/felddy/foundryvtt-docker/pkgs/container/foundryvtt)
 for a complete list of available tags.
@@ -143,13 +143,13 @@ for a complete list of available tags.
 > Hub](https://hub.docker.com/repository/docker/felddy/foundryvtt) and can be
 > referenced using the full registry path: `docker.io/felddy/foundryvtt:14`
 
-## Volumes ##
+## Volumes
 
 | Mount point | Purpose                               |
 | ----------- | ------------------------------------- |
 | `/data`     | Configuration, data, and log storage. |
 
-## Ports ##
+## Ports
 
 The following ports are exposed by this container:
 
@@ -157,108 +157,108 @@ The following ports are exposed by this container:
 | ------- | --------------------------------------------- |
 | `30000` | Foundry Virtual Tabletop server web interface |
 
-## Environment variables ##
+## Environment variables
 
-### Required variable combinations ###
+### Required variable combinations
 
 One of the three combinations of environment variables listed below must be set
 in order for the container to locate and install a Foundry Virtual Tabletop
-distribution.  Although all variables may be specified together, they are
+distribution. Although all variables may be specified together, they are
 evaluated in the following order of precedence:
 
- 1. `FOUNDRY_RELEASE_URL`, *or*
- 1. `FOUNDRY_USERNAME` and `FOUNDRY_PASSWORD`, *or*
- 1. `CONTAINER_CACHE`
+1.  `FOUNDRY_RELEASE_URL`, _or_
+1.  `FOUNDRY_USERNAME` and `FOUNDRY_PASSWORD`, _or_
+1.  `CONTAINER_CACHE`
 
-#### Credentials variables ####
+#### Credentials variables
 
-| Name               | Purpose                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `FOUNDRY_PASSWORD` | Account password for foundryvtt.com.  Required for downloading an application distribution.                  |
-| `FOUNDRY_USERNAME` | Account username or email address for foundryvtt.com.  Required for downloading an application distribution. |
+| Name               | Purpose                                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `FOUNDRY_PASSWORD` | Account password for foundryvtt.com. Required for downloading an application distribution.                  |
+| `FOUNDRY_USERNAME` | Account username or email address for foundryvtt.com. Required for downloading an application distribution. |
 
-***Note:*** `FOUNDRY_USERNAME` and `FOUNDRY_PASSWORD` may be set [using
+_**Note:**_ `FOUNDRY_USERNAME` and `FOUNDRY_PASSWORD` may be set [using
 secrets](#using-secrets) instead of environment variables.
 
-#### Presigned URL variable ####
+#### Presigned URL variable
 
-| Name                  | Purpose                                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `FOUNDRY_RELEASE_URL` | The presigned URL generated from the user's profile.  Required for downloading an application distribution. |
+| Name                  | Purpose                                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `FOUNDRY_RELEASE_URL` | The presigned URL generated from the user's profile. Required for downloading an application distribution. |
 
-### Optional variables ###
+### Optional variables
 
 Boolean variables accept `true`/`false` case-insensitively, along with
-`1`/`0`, `yes`/`no`, and `on`/`off`.  An unrecognized value logs a warning
-naming the variable and falls back to that variable's default.  An empty
-*Default* means no value is configured, and Foundry's (or the system's)
+`1`/`0`, `yes`/`no`, and `on`/`off`. An unrecognized value logs a warning
+naming the variable and falls back to that variable's default. An empty
+_Default_ means no value is configured, and Foundry's (or the system's)
 own behavior applies.
 
-| Name | Purpose | Default |
-| ---- | ------- | ------- |
-| `CONTAINER_CACHE` | Set a path to cache downloads of the Foundry distribution archive and speed up subsequent container startups.  The path should be in `/data` or another persistent mount point in the container.  Set to `""` to disable.  The cache may be shared by multiple containers: simultaneous startups coordinate among themselves so each release is downloaded only once.</br>***Note***: When the cache is disabled the container will sleep indefinitely on failure rather than exiting, to prevent a restart loop.  A distribution can be pre-downloaded and placed into a cache directory.  The distribution's name must be of the form: `foundryvtt-14.369.zip`, and its contents must match the version in its name — mislabeled archives are rejected and removed. | `/data/container_cache` |
-| `CONTAINER_CACHE_SIZE` | Set the maximum number of distribution archives to keep in the cache.  The minimum is `1`.  When the limit is exceeded, the least recently *used* archives are removed first — an archive counts as used each time a container installs from it, so a shared cache retains whatever its instances actually run, regardless of version numbers.  Unset to disable cache size management and keep all versions. | |
-| `CONTAINER_PATCHES` | Set a path to a directory of shell scripts to be run with `bash` after Foundry is installed but before it is started.  The path should be in `/data` or another persistent mount point in the container. e.g.; `/data/container_patches`  Patch files are run in lexicographic order, with `errexit`, `nounset`, and `pipefail` set and the `log`, `log_debug`, `log_warn`, and `log_error` helpers available.  A failing patch stops the container.  `CONTAINER_PATCHES` are processed after `CONTAINER_PATCH_URLS`. | |
-| `CONTAINER_PATCH_URLS` | Set to a space-delimited list of URLs of shell scripts to be run with `bash` after Foundry is installed but before it is started, in the same way as `CONTAINER_PATCHES`.  Patch URLs are run in the order specified.  `CONTAINER_PATCH_URLS` are processed before `CONTAINER_PATCHES`.  ⚠️ **Only use patch URLs from trusted sources!** | |
-| `CONTAINER_PRESERVE_CONFIG` | Normally new `options.json` and `admin.txt` files are generated by the container at each startup.  Setting this to `true` prevents the container from modifying these files when they exist.  If they do not exist, they will be created as normal. | `false` |
-| `CONTAINER_UMASK` | Control the default permissions on new files and directories created by Foundry VTT. Set the umask to `"0002"` if you need new files to be writable by other users in the same group as the foundry user. If this is empty or not set, the umask will not be changed (the system default is `"0022"`). | |
-| `CONTAINER_URL_FETCH_RETRY` | Number of times to retry fetching the presigned URL using exponential back off.  This behavior is useful in continuous integration environments where multiple parallel workflows can exceed the rate-limit of the URL generation service. | `0` |
-| `CONTAINER_VERBOSE` | Set to `true` to enable verbose logging for the container utility scripts. | `false` |
-| `FOUNDRY_ADMIN_KEY` | Admin password to be applied at startup.  If omitted the admin password will be cleared.  May be set [using secrets](#using-secrets). | |
-| `FOUNDRY_AWS_CONFIG` | An absolute or relative path that points to the [awsConfig.json](https://foundryvtt.com/article/aws-s3/), or `true` for AWS environment variable [credentials evaluation](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html) (e.g. ECS task or EC2 instance roles).  Set to `false` or leave unset to disable. | |
-| `FOUNDRY_COMPRESS_WEBSOCKET` | Set to `true` to enable compression of data sent from the server to the client via websocket. This is recommended for network performance. | `false` |
-| `FOUNDRY_CSS_THEME` | Choose the CSS theme for the setup page.  Valid values are `dark`, `fantasy`, and `scifi`. | `dark` |
-| `FOUNDRY_DEMO_CONFIG` | Demo mode allows you to configure a world which will be automatically launched and reset at a frequency of your choosing.  When the world is reset, it is deactivated.  The source data for the world is restored to its original state using a provided `.zip` file, and the next reset is automatically scheduled.  See: [Configuring demo mode](https://foundryvtt.com/article/configuration/#command-line). | |
-| `FOUNDRY_DELETE_NEDB` | Set to `true` to automatically delete legacy NeDB `.db` files after they have been migrated to the LevelDB format introduced in Version 11.  Enabling this recovers disk space but removes the ability to roll back to a pre-migration state.  Only relevant for data volumes previously used with Foundry Version 10 or earlier. | `false` |
-| `FOUNDRY_HOSTNAME` | A custom hostname to use in place of the host machine's public IP address when displaying the address of the game session. This allows for reverse proxies or DNS servers to modify the public address. | |
-| `FOUNDRY_HOT_RELOAD` | Set to `true` to allow packages to hot-reload certain assets, such as CSS, HTML, and localization files without a full refresh. This setting is only recommended for developers. | `false` |
-| `FOUNDRY_IP_DISCOVERY` | Allow the Foundry server to discover and report the accessibility of the host machine's public IP address and port.  Setting this to `false` may reduce server startup time in instances where this discovery would timeout. | `true` |
-| `FOUNDRY_LANGUAGE` | The default application language, as `<language>.<module>`.  Languages other than English are provided by a translation module that must already be installed in your user data — for example, install the [fr-core](https://foundryvtt.com/packages/fr-core) module and set `fr.fr-core` for French.  The default English translations are built in. | `en.core` |
-| `FOUNDRY_LOCAL_HOSTNAME` | Override the local network address used for invitation links, mirroring the functionality of the `FOUNDRY_HOSTNAME` option which configures the external address. | |
-| `FOUNDRY_LICENSE_KEY` | The license key to install. e.g.; `AAAA-BBBB-CCCC-DDDD-EEEE-FFFF`  If left unset, a license key will be fetched when using account authentication.   If multiple license keys are associated with an account, one will be chosen at random.  Specific licenses can be selected by passing in an integer index.  The first license key being `1`.  May be set [using secrets](#using-secrets). | |
-| `FOUNDRY_LOG_SIZE` | The maximum size a log file can reach before it is rotated.  Units must be included. e.g.; `1024k`, `64m`, `1g`. | |
-| `FOUNDRY_MAX_LOGS` | The maximum number of log files to retain before older ones are deleted. | |
-| `FOUNDRY_MINIFY_STATIC_FILES` | Set to `true` to reduce network traffic by serving minified static JavaScript and CSS files.  Enabling this setting is recommended for most users, but module developers may wish to disable it. | `false` |
-| `FOUNDRY_NO_BACKUPS` | Set to `true` to disable the automatic backup of world data that Foundry creates before performing major version migrations.  Users with an external backup strategy or constrained storage may wish to enable this. | `false` |
-| `FOUNDRY_PASSWORD_SALT` | Custom salt string to be applied to the admin password instead of the default salt string.  May be set [using secrets](#using-secrets). | |
-| `FOUNDRY_PROTOCOL` | If left unset Foundry VTT will bind to IPv4 and IPv6 interfaces.  To limit to IPv4 only, set to `4`.  To limit to IPv6 only set to `6`. | |
-| `FOUNDRY_PROXY_PORT` | Inform the Foundry server that the software is running behind a reverse proxy on some other port. This allows the invitation links created to the game to include the correct external port. | |
-| `FOUNDRY_PROXY_SSL` | Indicates whether the software is running behind a reverse proxy that uses SSL. This allows invitation links and A/V functionality to work as if the Foundry server had SSL configured directly. | `false` |
-| `FOUNDRY_ROUTE_PREFIX` | A string path which is appended to the base hostname to serve Foundry VTT content from a specific namespace. For example setting this to `demo` will result in data being served from `http://x.x.x.x:30000/demo/`. | |
-| `FOUNDRY_SERVICE_CONFIG` | The absolute path inside the container to a service configuration file.  Must be set together with `FOUNDRY_SERVICE_KEY`. | |
-| `FOUNDRY_SERVICE_KEY` | Used in conjunction with `FOUNDRY_SERVICE_CONFIG`.  Setting this without `FOUNDRY_SERVICE_CONFIG` will cause the container to exit with an error. | |
-| `FOUNDRY_SSL_CERT` | An absolute or relative path that points towards a SSL certificate file which is used jointly with the sslKey option to enable SSL and https connections. If both options are provided, the server will start using HTTPS automatically. | |
-| `FOUNDRY_SSL_KEY` | An absolute or relative path that points towards a SSL key file which is used jointly with the sslCert option to enable SSL and https connections. If both options are provided, the server will start using HTTPS automatically. | |
-| `FOUNDRY_TELEMETRY` | Set to `true` to enable FoundryVTT telemetry, `false` to disable.  This option allows the collection of anonymous usage data to help improve FoundryVTT.  It is recommended to explicitly set this value.  Leaving this unset will cause Foundry to prompt the user to make a choice on every launch. | *(prompt)* |
-| `FOUNDRY_TEMP_DIR` | An absolute path to a directory used for temporary storage of package `.zip` archives while they are being downloaded and installed.  When set, archives land outside the user data directory, so only the unpacked content counts against data volume space.  Useful for hosts with constrained `/data` storage. | |
-| `FOUNDRY_UNIX_SOCKET` | An absolute path to a Unix domain socket for the server listener.  When set, Foundry binds to the socket instead of the TCP port, which is useful for local reverse-proxy configurations (e.g. nginx or caddy via socket).  If both a port and a socket path are configured, the socket takes precedence. | |
-| `FOUNDRY_UPNP` | Allow Universal Plug and Play to automatically request port forwarding for the Foundry server port to your local network address. | `false` |
-| `FOUNDRY_UPNP_LEASE_DURATION` | Sets the Universal Plug and Play lease duration, allowing for the possibility of permanent leases for routers which do not support temporary leases.  To define an indefinite lease duration set the value to `0`. | |
-| `FOUNDRY_VERSION` | Version of Foundry Virtual Tabletop to install. | `14.369` |
-| `FOUNDRY_WORLD` | The directory name of the world to launch at system start. | |
-| `TZ` | Container [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List) | `UTC` |
-| `*_PROXY` | Proxy settings to use during container initialization and by Foundry at runtime.  The container's own requests honor `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` (and their lowercase forms) with `http://` and `https://` proxy URLs.  All `*_PROXY` variables are passed through to Foundry. | |
+| Name                          | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Default                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `CONTAINER_CACHE`             | Set a path to cache downloads of the Foundry distribution archive and speed up subsequent container startups. The path should be in `/data` or another persistent mount point in the container. Set to `""` to disable. The cache may be shared by multiple containers: simultaneous startups coordinate among themselves so each release is downloaded only once.</br>_**Note**_: When the cache is disabled the container will sleep indefinitely on failure rather than exiting, to prevent a restart loop. A distribution can be pre-downloaded and placed into a cache directory. The distribution's name must be of the form: `foundryvtt-14.369.zip`, and its contents must match the version in its name — mislabeled archives are rejected and removed. | `/data/container_cache` |
+| `CONTAINER_CACHE_SIZE`        | Set the maximum number of distribution archives to keep in the cache. The minimum is `1`. When the limit is exceeded, the least recently _used_ archives are removed first — an archive counts as used each time a container installs from it, so a shared cache retains whatever its instances actually run, regardless of version numbers. Unset to disable cache size management and keep all versions.                                                                                                                                                                                                                                                                                                                                                       |                         |
+| `CONTAINER_PATCHES`           | Set a path to a directory of shell scripts to be run with `bash` after Foundry is installed but before it is started. The path should be in `/data` or another persistent mount point in the container. e.g.; `/data/container_patches` Patch files are run in lexicographic order, with `errexit`, `nounset`, and `pipefail` set and the `log`, `log_debug`, `log_warn`, and `log_error` helpers available. A failing patch stops the container. `CONTAINER_PATCHES` are processed after `CONTAINER_PATCH_URLS`.                                                                                                                                                                                                                                                |                         |
+| `CONTAINER_PATCH_URLS`        | Set to a space-delimited list of URLs of shell scripts to be run with `bash` after Foundry is installed but before it is started, in the same way as `CONTAINER_PATCHES`. Patch URLs are run in the order specified. `CONTAINER_PATCH_URLS` are processed before `CONTAINER_PATCHES`. ⚠️ **Only use patch URLs from trusted sources!**                                                                                                                                                                                                                                                                                                                                                                                                                           |                         |
+| `CONTAINER_PRESERVE_CONFIG`   | Normally new `options.json` and `admin.txt` files are generated by the container at each startup. Setting this to `true` prevents the container from modifying these files when they exist. If they do not exist, they will be created as normal.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `false`                 |
+| `CONTAINER_UMASK`             | Control the default permissions on new files and directories created by Foundry VTT. Set the umask to `"0002"` if you need new files to be writable by other users in the same group as the foundry user. If this is empty or not set, the umask will not be changed (the system default is `"0022"`).                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                         |
+| `CONTAINER_URL_FETCH_RETRY`   | Number of times to retry fetching the presigned URL using exponential back off. This behavior is useful in continuous integration environments where multiple parallel workflows can exceed the rate-limit of the URL generation service.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `0`                     |
+| `CONTAINER_VERBOSE`           | Set to `true` to enable verbose logging for the container utility scripts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `false`                 |
+| `FOUNDRY_ADMIN_KEY`           | Admin password to be applied at startup. If omitted the admin password will be cleared. May be set [using secrets](#using-secrets).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                         |
+| `FOUNDRY_AWS_CONFIG`          | An absolute or relative path that points to the [awsConfig.json](https://foundryvtt.com/article/aws-s3/), or `true` for AWS environment variable [credentials evaluation](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html) (e.g. ECS task or EC2 instance roles). Set to `false` or leave unset to disable.                                                                                                                                                                                                                                                                                                                                                                                                      |                         |
+| `FOUNDRY_COMPRESS_WEBSOCKET`  | Set to `true` to enable compression of data sent from the server to the client via websocket. This is recommended for network performance.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `false`                 |
+| `FOUNDRY_CSS_THEME`           | Choose the CSS theme for the setup page. Valid values are `dark`, `fantasy`, and `scifi`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `dark`                  |
+| `FOUNDRY_DEMO_CONFIG`         | Demo mode allows you to configure a world which will be automatically launched and reset at a frequency of your choosing. When the world is reset, it is deactivated. The source data for the world is restored to its original state using a provided `.zip` file, and the next reset is automatically scheduled. See: [Configuring demo mode](https://foundryvtt.com/article/configuration/#command-line).                                                                                                                                                                                                                                                                                                                                                     |                         |
+| `FOUNDRY_DELETE_NEDB`         | Set to `true` to automatically delete legacy NeDB `.db` files after they have been migrated to the LevelDB format introduced in Version 11. Enabling this recovers disk space but removes the ability to roll back to a pre-migration state. Only relevant for data volumes previously used with Foundry Version 10 or earlier.                                                                                                                                                                                                                                                                                                                                                                                                                                  | `false`                 |
+| `FOUNDRY_HOSTNAME`            | A custom hostname to use in place of the host machine's public IP address when displaying the address of the game session. This allows for reverse proxies or DNS servers to modify the public address.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |                         |
+| `FOUNDRY_HOT_RELOAD`          | Set to `true` to allow packages to hot-reload certain assets, such as CSS, HTML, and localization files without a full refresh. This setting is only recommended for developers.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `false`                 |
+| `FOUNDRY_IP_DISCOVERY`        | Allow the Foundry server to discover and report the accessibility of the host machine's public IP address and port. Setting this to `false` may reduce server startup time in instances where this discovery would timeout.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `true`                  |
+| `FOUNDRY_LANGUAGE`            | The default application language, as `<language>.<module>`. Languages other than English are provided by a translation module that must already be installed in your user data — for example, install the [fr-core](https://foundryvtt.com/packages/fr-core) module and set `fr.fr-core` for French. The default English translations are built in.                                                                                                                                                                                                                                                                                                                                                                                                              | `en.core`               |
+| `FOUNDRY_LOCAL_HOSTNAME`      | Override the local network address used for invitation links, mirroring the functionality of the `FOUNDRY_HOSTNAME` option which configures the external address.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                         |
+| `FOUNDRY_LICENSE_KEY`         | The license key to install. e.g.; `AAAA-BBBB-CCCC-DDDD-EEEE-FFFF` If left unset, a license key will be fetched when using account authentication. If multiple license keys are associated with an account, one will be chosen at random. Specific licenses can be selected by passing in an integer index. The first license key being `1`. May be set [using secrets](#using-secrets).                                                                                                                                                                                                                                                                                                                                                                          |                         |
+| `FOUNDRY_LOG_SIZE`            | The maximum size a log file can reach before it is rotated. Units must be included. e.g.; `1024k`, `64m`, `1g`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                         |
+| `FOUNDRY_MAX_LOGS`            | The maximum number of log files to retain before older ones are deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                         |
+| `FOUNDRY_MINIFY_STATIC_FILES` | Set to `true` to reduce network traffic by serving minified static JavaScript and CSS files. Enabling this setting is recommended for most users, but module developers may wish to disable it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `false`                 |
+| `FOUNDRY_NO_BACKUPS`          | Set to `true` to disable the automatic backup of world data that Foundry creates before performing major version migrations. Users with an external backup strategy or constrained storage may wish to enable this.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `false`                 |
+| `FOUNDRY_PASSWORD_SALT`       | Custom salt string to be applied to the admin password instead of the default salt string. May be set [using secrets](#using-secrets).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                         |
+| `FOUNDRY_PROTOCOL`            | If left unset Foundry VTT will bind to IPv4 and IPv6 interfaces. To limit to IPv4 only, set to `4`. To limit to IPv6 only set to `6`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |                         |
+| `FOUNDRY_PROXY_PORT`          | Inform the Foundry server that the software is running behind a reverse proxy on some other port. This allows the invitation links created to the game to include the correct external port.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |                         |
+| `FOUNDRY_PROXY_SSL`           | Indicates whether the software is running behind a reverse proxy that uses SSL. This allows invitation links and A/V functionality to work as if the Foundry server had SSL configured directly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `false`                 |
+| `FOUNDRY_ROUTE_PREFIX`        | A string path which is appended to the base hostname to serve Foundry VTT content from a specific namespace. For example setting this to `demo` will result in data being served from `http://x.x.x.x:30000/demo/`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                         |
+| `FOUNDRY_SERVICE_CONFIG`      | The absolute path inside the container to a service configuration file. Must be set together with `FOUNDRY_SERVICE_KEY`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                         |
+| `FOUNDRY_SERVICE_KEY`         | Used in conjunction with `FOUNDRY_SERVICE_CONFIG`. Setting this without `FOUNDRY_SERVICE_CONFIG` will cause the container to exit with an error.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |                         |
+| `FOUNDRY_SSL_CERT`            | An absolute or relative path that points towards a SSL certificate file which is used jointly with the sslKey option to enable SSL and https connections. If both options are provided, the server will start using HTTPS automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                         |
+| `FOUNDRY_SSL_KEY`             | An absolute or relative path that points towards a SSL key file which is used jointly with the sslCert option to enable SSL and https connections. If both options are provided, the server will start using HTTPS automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                         |
+| `FOUNDRY_TELEMETRY`           | Set to `true` to enable FoundryVTT telemetry, `false` to disable. This option allows the collection of anonymous usage data to help improve FoundryVTT. It is recommended to explicitly set this value. Leaving this unset will cause Foundry to prompt the user to make a choice on every launch.                                                                                                                                                                                                                                                                                                                                                                                                                                                               | _(prompt)_              |
+| `FOUNDRY_TEMP_DIR`            | An absolute path to a directory used for temporary storage of package `.zip` archives while they are being downloaded and installed. When set, archives land outside the user data directory, so only the unpacked content counts against data volume space. Useful for hosts with constrained `/data` storage.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                         |
+| `FOUNDRY_UNIX_SOCKET`         | An absolute path to a Unix domain socket for the server listener. When set, Foundry binds to the socket instead of the TCP port, which is useful for local reverse-proxy configurations (e.g. nginx or caddy via socket). If both a port and a socket path are configured, the socket takes precedence.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |                         |
+| `FOUNDRY_UPNP`                | Allow Universal Plug and Play to automatically request port forwarding for the Foundry server port to your local network address.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `false`                 |
+| `FOUNDRY_UPNP_LEASE_DURATION` | Sets the Universal Plug and Play lease duration, allowing for the possibility of permanent leases for routers which do not support temporary leases. To define an indefinite lease duration set the value to `0`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                         |
+| `FOUNDRY_VERSION`             | Version of Foundry Virtual Tabletop to install.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `14.369`                |
+| `FOUNDRY_WORLD`               | The directory name of the world to launch at system start.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |                         |
+| `TZ`                          | Container [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `UTC`                   |
+| `*_PROXY`                     | Proxy settings to use during container initialization and by Foundry at runtime. The container's own requests honor `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` (and their lowercase forms) with `http://` and `https://` proxy URLs. All `*_PROXY` variables are passed through to Foundry.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |                         |
 
-### Runtime variables ###
+### Runtime variables
 
 Foundry Virtual Tabletop runs on [Bun](https://bun.sh) (`bun run --bun`); the
-image contains no Node.js.  Any `BUN_*` and `NODE_*` variables supplied to
-the container are passed through to the server.  Listed below are some
+image contains no Node.js. Any `BUN_*` and `NODE_*` variables supplied to
+the container are passed through to the server. Listed below are some
 variables that are particularly useful.
 
-| Name | Purpose |
-| ---- | ------- |
-| `NODE_EXTRA_CA_CERTS` | When set, the well known "root" CAs (like VeriSign) will be extended with the extra certificates.  The file should consist of one or more trusted certificates in PEM format. |
-| `NODE_TLS_REJECT_UNAUTHORIZED` | If the value equals `0`, certificate validation is disabled for TLS connections. This makes TLS, and HTTPS by extension, insecure.  ⚠️ **The use of this environment variable is strongly discouraged.** |
+| Name                           | Purpose                                                                                                                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_EXTRA_CA_CERTS`          | When set, the well known "root" CAs (like VeriSign) will be extended with the extra certificates. The file should consist of one or more trusted certificates in PEM format.                            |
+| `NODE_TLS_REJECT_UNAUTHORIZED` | If the value equals `0`, certificate validation is disabled for TLS connections. This makes TLS, and HTTPS by extension, insecure. ⚠️ **The use of this environment variable is strongly discouraged.** |
 
 > [!NOTE]
 > Node.js-specific command-line options in `NODE_OPTIONS` (such as
 > `--max-old-space-size`) are not interpreted by Bun.
 
-## Secrets ##
+## Secrets
 
 | Filename      | Key                     | Purpose                                                 |
-| ------------  | ----------------------- | ------------------------------------------------------- |
+| ------------- | ----------------------- | ------------------------------------------------------- |
 | `config.json` | `foundry_admin_key`     | Overrides `FOUNDRY_ADMIN_KEY` environment variable.     |
 | `config.json` | `foundry_license_key`   | Overrides `FOUNDRY_LICENSE_KEY` environment variable.   |
 | `config.json` | `foundry_password`      | Overrides `FOUNDRY_PASSWORD` environment variable.      |
@@ -266,10 +266,10 @@ variables that are particularly useful.
 | `config.json` | `foundry_service_key`   | Overrides `FOUNDRY_SERVICE_KEY` environment variable.   |
 | `config.json` | `foundry_username`      | Overrides `FOUNDRY_USERNAME` environment variable.      |
 
-## Foundry VTT CLI ##
+## Foundry VTT CLI
 
 The image bundles the official [Foundry VTT
-CLI](https://github.com/foundryvtt/foundryvtt-cli) as the `fvtt` command.  It
+CLI](https://github.com/foundryvtt/foundryvtt-cli) as the `fvtt` command. It
 comes pre-configured with the container's installation and data paths, so
 package development workflows — such as packing and unpacking compendium
 databases — work in a running container without any setup:
@@ -282,20 +282,20 @@ docker exec --interactive --tty <container_name> fvtt package unpack "my-pack"
 The CLI stores its configuration in `$XDG_DATA_HOME/.fvttrc.yml`, which
 defaults to `/data/.local/share/.fvttrc.yml` in this image so that the
 configuration persists in the data volume and remains writable for any UID the
-container runs as.  Set `XDG_DATA_HOME` to change the location.
+container runs as. Set `XDG_DATA_HOME` to change the location.
 
-## Building ##
+## Building
 
-Most users should pull a published image.  If you want to build the image
+Most users should pull a published image. If you want to build the image
 yourself — from source, for another architecture, or with a distribution
 pre-installed — see the [building guide](docs/building.md).
 
-## Contributing ##
+## Contributing
 
-We welcome contributions!  Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for
+We welcome contributions! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 details.
 
-## License ##
+## License
 
 This project is released as open source under the [MIT license](LICENSE).
 
