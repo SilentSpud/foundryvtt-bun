@@ -1,33 +1,24 @@
 {
-  "author": "Mark Feldhousen <markf+github@geekpad.com>",
-  "bugs": {
-    "url": "https://github.com/felddy/foundryvtt-docker/issues"
-  },
-  "dependencies": {
-    "fetch-cookie": "^3.2.0",
-    "tough-cookie": "^6.0.2"
-  },
+  "name": "foundryvtt-utils",
+  "version": "3.0.0",
+  "private": true,
   "description": "Utilities to help boot a FoundryVTT server.",
-  "devDependencies": {
-    "@types/bun": "^1.4.3",
-    "oxfmt": "^0.73.0",
-    "oxlint": "^1.88.0",
-    "typescript": "^7.0.2"
-  },
-  "homepage": "https://github.com/felddy/foundryvtt-docker#readme",
   "keywords": [
     "bun",
     "docker",
     "foundryvtt"
   ],
+  "homepage": "https://github.com/felddy/foundryvtt-docker#readme",
+  "bugs": {
+    "url": "https://github.com/felddy/foundryvtt-docker/issues"
+  },
   "license": "MIT",
-  "name": "foundryvtt-utils",
-  "packageManager": "bun@1.4.3",
-  "private": true,
+  "author": "Mark Feldhousen <markf+github@geekpad.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/felddy/foundryvtt-docker.git"
   },
+  "type": "module",
   "scripts": {
     "build": "bun tools/build.ts",
     "bump-version": "bun tools/bump_version.ts",
@@ -44,6 +35,15 @@
     "test:container": "bun test --timeout 600000 tests/container",
     "version": "bun tools/version.ts"
   },
-  "type": "module",
-  "version": "3.0.0"
+  "dependencies": {
+    "fetch-cookie": "^3.2.0",
+    "tough-cookie": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.3",
+    "oxfmt": "^0.73.0",
+    "oxlint": "^1.88.0",
+    "typescript": "^7.0.2"
+  },
+  "packageManager": "bun@1.4.3"
 }

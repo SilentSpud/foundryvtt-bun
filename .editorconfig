@@ -20,3 +20,7 @@ switch_case_indent = true
 # Yaml files
 [*.{yml,yaml}]
 indent_size = 2
+
+# JSON files (bun writes package.json with two spaces)
+[*.json]
+indent_size = 2

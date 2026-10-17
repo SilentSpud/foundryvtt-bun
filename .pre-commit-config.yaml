@@ -32,10 +32,6 @@ repos:
       - id: mixed-line-ending
         args:
           - --fix=lf
-      - id: pretty-format-json
-        exclude: ^(bun\.lock|\.vscode/settings\.json)$
-        args:
-          - --autofix
       - id: trailing-whitespace
 
   # oxfmt and oxlint run from the project dependencies so the hooks and
@@ -48,6 +44,7 @@ repos:
         entry: bun x oxfmt --no-error-on-unmatched-pattern
         types_or:
           - javascript
+          - json
           - markdown
           - ts
           - yaml

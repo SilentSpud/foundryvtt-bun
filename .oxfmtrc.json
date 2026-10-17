@@ -1,8 +1,5 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [
-    "*.json",
-    "*.lock"
-  ],
+  "ignorePatterns": ["*.lock"],
   "printWidth": 80
 }
