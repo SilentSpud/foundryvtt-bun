@@ -8,15 +8,15 @@
     "docker",
     "foundryvtt"
   ],
-  "homepage": "https://github.com/SilentSpud/foundryvtt-docker#readme",
+  "homepage": "https://github.com/SilentSpud/foundryvtt-bun#readme",
   "bugs": {
-    "url": "https://github.com/SilentSpud/foundryvtt-docker/issues"
+    "url": "https://github.com/SilentSpud/foundryvtt-bun/issues"
   },
   "license": "MIT",
   "author": "Mark Feldhousen <markf+github@geekpad.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SilentSpud/foundryvtt-docker.git"
+    "url": "git+https://github.com/SilentSpud/foundryvtt-bun.git"
   },
   "type": "module",
   "scripts": {

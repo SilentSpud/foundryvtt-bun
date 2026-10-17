@@ -238,7 +238,7 @@ function writeCacheTag(cacheDir: string): void {
         `${cacheDir}/CACHEDIR.TAG`,
         `Signature: ${signature}\n` +
             "# This file is a cache directory tag created by the silentspud/foundryvtt-bun container\n" +
-            "# https://github.com/felddy/foundryvtt-docker\n" +
+            "# https://github.com/SilentSpud/foundryvtt-bun\n" +
             "# For information about cache directory tags see https://bford.info/cachedir/\n",
     );
 }

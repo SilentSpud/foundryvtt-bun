@@ -14,7 +14,7 @@ docker build \
   --build-arg CONTAINER_VERSION=14.369.0 \
   --build-arg FOUNDRY_VERSION=14.369 \
   --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
-  https://github.com/SilentSpud/foundryvtt-docker.git#main
+  https://github.com/SilentSpud/foundryvtt-bun.git#main
 ```
 
 ## Building from a clone
@@ -24,8 +24,8 @@ run with [Bun](https://bun.sh), which supplies the versions from the
 `version` field in `package.json`:
 
 ```console
-git clone https://github.com/SilentSpud/foundryvtt-docker.git
-cd foundryvtt-docker
+git clone https://github.com/SilentSpud/foundryvtt-bun.git
+cd foundryvtt-bun
 bun run image                    # the image for your platform
 bun run image multiarch --push   # every published platform
 ```
@@ -46,8 +46,8 @@ feature:
 1. Clone the project:
 
    ```console
-   git clone https://github.com/SilentSpud/foundryvtt-docker.git
-   cd foundryvtt-docker
+   git clone https://github.com/SilentSpud/foundryvtt-bun.git
+   cd foundryvtt-bun
    ```
 
 1. Build with `buildx`, selecting the target platform:
@@ -81,7 +81,7 @@ docker build \
   --secret id=foundry_username,src=<(echo "<your_username>") \
   --secret id=foundry_password,src=<(echo "<your_password>") \
   --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
-  https://github.com/SilentSpud/foundryvtt-docker.git#main
+  https://github.com/SilentSpud/foundryvtt-bun.git#main
 ```
 
 > [!TIP]
@@ -96,7 +96,7 @@ docker build \
 >   --secret id=foundry_username,src=<(jq -r '.foundry_username' path/to/credentials.json) \
 >   --secret id=foundry_password,src=<(jq -r '.foundry_password' path/to/credentials.json) \
 >   --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
->   https://github.com/SilentSpud/foundryvtt-docker.git#main
+>   https://github.com/SilentSpud/foundryvtt-bun.git#main
 > ```
 
 More information about Docker build secrets is in the
@@ -110,5 +110,5 @@ docker build \
   --build-arg FOUNDRY_VERSION=14.369 \
   --build-arg FOUNDRY_RELEASE_URL='<temporary_url>' \
   --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
-  https://github.com/SilentSpud/foundryvtt-docker.git#main
+  https://github.com/SilentSpud/foundryvtt-bun.git#main
 ```
