@@ -55,7 +55,10 @@ const SECRET_FILE = "/run/secrets/config.json";
 const IMAGE_VERSION_FILE = "image_version.txt";
 const INSTALLED_PACKAGE = "resources/app/package.json";
 const LOG_HELPERS = `${import.meta.dir}/logging.sh`;
-const SECRET_NAME_RE = /PASSWORD|KEY|SECRET|TOKEN|SALT/;
+// A presigned release URL is itself a download credential.
+const SECRET_NAME_RE = /PASSWORD|KEY|SECRET|TOKEN|SALT|CREDENTIAL|RELEASE_URL/i;
+// Proxy and patch URLs may carry user:password@ credentials.
+const URL_USERINFO_RE = /(:\/\/)[^/\s@]+@/g;
 
 const env = process.env;
 
@@ -112,7 +115,11 @@ function debugEnvironment(): string {
     return Object.entries(env)
         .map(
             ([name, value]) =>
-                `${name}=${SECRET_NAME_RE.test(name) ? "[REDACTED]" : value}`,
+                `${name}=${
+                    SECRET_NAME_RE.test(name)
+                        ? "[REDACTED]"
+                        : value?.replace(URL_USERINFO_RE, "$1[REDACTED]@")
+                }`,
         )
         .sort()
         .join("\n");
@@ -311,7 +318,13 @@ async function applyPatches(userAgent: string): Promise<void> {
         for (const url of env.CONTAINER_PATCH_URLS.split(/\s+/).filter(
             Boolean,
         )) {
-            log.info(`Downloading patch from URL: ${url}`);
+            const shown = url.replace(URL_USERINFO_RE, "$1[REDACTED]@");
+            log.info(`Downloading patch from URL: ${shown}`);
+            if (!url.toLowerCase().startsWith("https://")) {
+                log.warn(
+                    `Patch URL is not HTTPS, so anyone on the network path can replace the script: ${shown}`,
+                );
+            }
             const dir = mkdtempSync(`${tmpdir()}/patch_url.`);
             const patchFile = `${dir}/patch.sh`;
             // download() rejects HTTP errors so an error page is never run.
@@ -324,7 +337,7 @@ async function applyPatches(userAgent: string): Promise<void> {
                 });
             } catch (err) {
                 log.error(
-                    `Failed to download patch from URL: ${url} (${(err as Error).message})`,
+                    `Failed to download patch from URL: ${shown} (${(err as Error).message})`,
                 );
                 throw new ExitError(1);
             }
@@ -398,6 +411,7 @@ async function install(
     const downloadingFile = `${prefix}downloading-${foundryVersion}.${env.HOSTNAME || "unknown"}-${process.pid}.zip`;
     const releaseFile = `${prefix}foundryvtt-${foundryVersion}.zip`;
 
+    let verified = false;
     let presignedUrl: string | undefined;
     if (env.FOUNDRY_RELEASE_URL) {
         log.info("Using FOUNDRY_RELEASE_URL to download release.");
@@ -538,6 +552,7 @@ async function install(
             verifyReleaseFile(downloadingFile, foundryVersion);
             try {
                 renameSync(downloadingFile, releaseFile);
+                verified = true;
             } catch {
                 // the release file check below decides
             }
@@ -556,7 +571,11 @@ async function install(
     }
 
     log.info(`Installing Foundry Virtual Tabletop ${foundryVersion}`);
-    verifyReleaseFile(releaseFile, foundryVersion);
+    // Reading the central directory of a large archive is not free, so skip
+    // the check for the file this run just verified and renamed into place.
+    if (!verified) {
+        verifyReleaseFile(releaseFile, foundryVersion);
+    }
     // Record the use: cache eviction is least-recently-used by mtime.
     try {
         const now = new Date();

@@ -7,22 +7,31 @@ on:
       - auto_merge_enabled
       - auto_merge_disabled
 
-permissions:
-  pull-requests: write
+# errtrace, nounset, errexit, and pipefail; -x echoes each command.
+defaults:
+  run:
+    shell: bash -Eueo pipefail -x {0}
 
-env:
-  LABEL_NAME: "automerge :bell:"
+permissions: {}
 
 jobs:
   add-remove-label:
+    name: Update the auto-merge label
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
+      # pull_request_target runs with a write token, so event data reaches the
+      # shell only through the environment, never through an expression.
       - name: Update label
-        run: |
-          if [[ "${{ github.event.action }}" == "auto_merge_enabled" ]]; then
-            gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --add-label "${{ env.LABEL_NAME }}"
-          elif [[ "${{ github.event.action }}" == "auto_merge_disabled" ]]; then
-            gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --remove-label "${{ env.LABEL_NAME }}"
-          fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTION: ${{ github.event.action }}
+          GH_TOKEN: ${{ github.token }}
+          LABEL_NAME: "automerge :bell:"
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ "$ACTION" == "auto_merge_enabled" ]]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --add-label "$LABEL_NAME"
+          elif [[ "$ACTION" == "auto_merge_disabled" ]]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --remove-label "$LABEL_NAME"
+          fi

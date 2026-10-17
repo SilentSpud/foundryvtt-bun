@@ -11,14 +11,15 @@ defaults:
   run:
     shell: bash -Eueo pipefail -x {0}
 
-permissions:
-  contents: read
-  issues: write
+permissions: {}
 
 jobs:
   check:
     name: Check for a new Foundry release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     env:
       GH_TOKEN: ${{ github.token }}
       LABEL: "foundry release :tada:"

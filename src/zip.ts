@@ -14,6 +14,8 @@ const CENTRAL_SIG = 0x02014b50;
 const LOCAL_SIG = 0x04034b50;
 // EOCD is 22 bytes plus a comment of at most 65535 bytes.
 const EOCD_SEARCH = 22 + 0xffff;
+// Only small metadata members (package.json) are ever read.
+const MAX_READ_SIZE = 16 * 1024 * 1024;
 
 export interface ZipEntry {
     name: string;
@@ -110,6 +112,10 @@ export class ZipReader implements Disposable {
             cdOffset = bigToNumber(zip64.readBigUInt64LE(48));
         }
 
+        // Checked before allocating, so a forged size cannot claim gigabytes.
+        if (cdOffset + cdSize > fileSize) {
+            throw new ZipError("Central directory extends past end of file");
+        }
         const cd = readAt(this.fd, cdOffset, cdSize);
         const entries: ZipEntry[] = [];
         let pos = 0;
@@ -167,11 +173,17 @@ export class ZipReader implements Disposable {
         return this.entries.map((entry) => entry.name);
     }
 
-    /** Read and decompress a member, or undefined when it is absent. */
-    read(name: string): Buffer | undefined {
+    /**
+     * Read and decompress a member, or undefined when it is absent.  Members
+     * over `maxSize` bytes are refused, which also stops a deflate bomb.
+     */
+    read(name: string, maxSize = MAX_READ_SIZE): Buffer | undefined {
         const entry = this.entries.find((candidate) => candidate.name === name);
         if (!entry) {
             return undefined;
+        }
+        if (entry.size > maxSize || entry.compressedSize > maxSize) {
+            throw new ZipError(`${name} is larger than ${maxSize} bytes`);
         }
         const header = readAt(this.fd, entry.localHeaderOffset, 30);
         if (header.readUInt32LE(0) !== LOCAL_SIG) {
@@ -187,7 +199,8 @@ export class ZipReader implements Disposable {
             case 0:
                 return data;
             case 8:
-                return inflateRawSync(data);
+                // The declared size is untrusted; cap what inflation may produce.
+                return inflateRawSync(data, { maxOutputLength: maxSize });
             default:
                 throw new ZipError(
                     `Unsupported compression method ${entry.method}`,

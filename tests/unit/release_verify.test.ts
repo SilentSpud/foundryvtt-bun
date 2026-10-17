@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 import {
     archiveKind,
@@ -7,7 +7,7 @@ import {
     releaseArchiveVersion,
     releaseVersion,
 } from "../../src/release_verify.ts";
-import { ZipReader } from "../../src/zip.ts";
+import { ZipError, ZipReader } from "../../src/zip.ts";
 import { tmpDir } from "../helpers/tmp.ts";
 import { releaseJson, writeZip } from "../helpers/zip.ts";
 
@@ -98,6 +98,24 @@ test("ZipReader lists members", () => {
     } finally {
         reader.close();
     }
+});
+
+test("ZipReader refuses members over the size limit", () => {
+    const zip = writeZip(`${tmpDir()}/big.zip`, {
+        "big.txt": "x".repeat(4096),
+    });
+    using reader = new ZipReader(zip);
+    expect(() => reader.read("big.txt", 1024)).toThrow(ZipError);
+    expect(reader.read("big.txt", 4096)?.length).toBe(4096);
+});
+
+test("ZipReader rejects a central directory past the end of the file", () => {
+    const path = writeZip(`${tmpDir()}/forged.zip`, { "a.txt": "a" });
+    const data = readFileSync(path);
+    // Claim a central directory larger than the whole archive.
+    data.writeUInt32LE(0x7fffffff, data.length - 22 + 12);
+    writeFileSync(path, data);
+    expect(() => new ZipReader(path)).toThrow(ZipError);
 });
 
 describe("archiveKind", () => {

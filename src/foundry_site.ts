@@ -16,7 +16,8 @@ export const BASE_URL = "https://foundryvtt.com";
 export const LOCAL_DOMAIN = "felddy.com";
 export const DEFAULT_USER_AGENT = `Bun/${Bun.version}`;
 const INITIAL_RETRY_DELAY_S = 120;
-const USERNAME_RE = /\/community\/(?<username>.+)/;
+// One path segment: the name is reused in a cookie and in the licenses URL.
+const USERNAME_RE = /\/community\/(?<username>[^/?#;\s]+)/;
 
 export interface SessionOptions {
     logger?: Logger;
@@ -298,7 +299,8 @@ export class FoundrySession {
         if (!presigned) {
             throw new Error("Could not fetch a release URL.");
         }
-        this.logger.debug(`Presigned URL: ${presigned}`);
+        // The query string is the signature, which grants the download.
+        this.logger.debug(`Presigned URL: ${presigned.split("?", 1)[0]}?…`);
         const urlVersion = presigned.match(
             /(?:releases\/|foundryvtt[^/]*?-)(\d+\.\d+(?:\.\d+)?)/i,
         )?.[1];

@@ -107,6 +107,22 @@ ENV HOME=/home/node
 
 WORKDIR $HOME
 
+# Packages come before the application files so this layer stays cached
+# across code changes.  The entrypoint extracts releases with unzip, runs
+# patch scripts with bash, and reports mounts with findmnt; curl, jq, patch,
+# and sed stay available to user patch scripts.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  bash \
+  ca-certificates \
+  curl \
+  jq \
+  patch \
+  sed \
+  tzdata \
+  unzip \
+  util-linux \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=optional-release-stage /root/dist/ .
 COPY --from=build-stage \
   /root/dist/authenticate.js \
@@ -117,24 +133,11 @@ COPY --from=build-stage \
   ./
 # Log helpers for user patch scripts (CONTAINER_PATCHES, CONTAINER_PATCH_URLS).
 COPY src/logging.sh ./
-# The entrypoint extracts releases with unzip, runs patch scripts with bash,
-# and reports mounts with findmnt; curl, jq, patch, and sed stay available to
-# user patch scripts.
+# After the COPYs, which can reset the mode of an existing resources/.
 RUN mkdir -p resources /data \
   && chmod a+rx /home/node \
   && chmod a+rwx resources /data \
-  && apt-get update && apt-get install -y --no-install-recommends \
-  bash \
-  ca-certificates \
-  curl \
-  jq \
-  patch \
-  sed \
-  tzdata \
-  unzip \
-  util-linux \
-  && rm -rf /var/lib/apt/lists/* \
-  && echo ${CONTAINER_VERSION} > image_version.txt
+  && echo "${CONTAINER_VERSION}" > image_version.txt
 
 # fvtt.js pins the CLI's configuration to a writable, persistent location.
 COPY --from=fvtt-cli-stage /usr/local/lib/foundryvtt-cli /usr/local/lib/foundryvtt-cli

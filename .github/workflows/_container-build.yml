@@ -175,6 +175,8 @@ jobs:
 
       - name: Fail on vulnerabilities
         if: inputs.scan && steps.trivy.outputs.status != '0'
+        env:
+          PLATFORM: ${{ matrix.platform }}
         run: |
-          echo "::error::Trivy found CRITICAL or HIGH vulnerabilities in ${{ matrix.platform }}."
+          echo "::error::Trivy found CRITICAL or HIGH vulnerabilities in ${PLATFORM}."
           exit 1

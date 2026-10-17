@@ -78,8 +78,8 @@ jobs:
           ARTIFACT_NAME="digests-${IMAGE_SLUG}-${PLATFORM_SLUG}"
           ARTIFACT_DIR="/tmp/digests/${ARTIFACT_NAME}"
           mkdir -p /tmp/digests
-          gh run download "${{ github.run_id }}" \
-            --repo "${{ github.repository }}" \
+          gh run download "$GITHUB_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
             --name "${ARTIFACT_NAME}" \
             --dir "${ARTIFACT_DIR}"
           HEX=$(ls "${ARTIFACT_DIR}" | grep -E '^[a-f0-9]{64}$' || true)
