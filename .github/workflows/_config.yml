@@ -14,7 +14,7 @@ on:
         type: string
     outputs:
       container_version:
-        description: The container version from src/version.txt
+        description: The container version from package.json
         value: ${{ jobs.config.outputs.container_version }}
       foundry_version:
         description: The derived Foundry major.build version

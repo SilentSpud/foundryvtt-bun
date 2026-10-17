@@ -1,5 +1,5 @@
 # Run through `bun run image [target]`, which derives CONTAINER_VERSION and
-# FOUNDRY_VERSION from src/version.txt.
+# FOUNDRY_VERSION from the package.json version.
 #
 # multiarch needs --push or another output: multi-platform images cannot be
 # loaded into the classic docker image store.

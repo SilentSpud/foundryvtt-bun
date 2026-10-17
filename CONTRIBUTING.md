@@ -59,7 +59,7 @@ Common tasks:
 | `bun run image`           | Build the container image with `docker buildx bake` (see `docker-bake.hcl`). |
 | `bun run test:container`  | Run the container tests against the built image.                             |
 | `bun run version`         | Print the container and Foundry versions.                                    |
-| `bun run release <x.y.z>` | Set a new version and commit it.                                             |
+| `bun run release <x.y.z>` | Set a new version in `package.json`; commit it and open a pull request.      |
 | `bun run format`          | Format the TypeScript, YAML, JSON, and Markdown files with oxfmt.            |
 | `bun run lint`            | Run the type check, format check, and file checks, as CI does.               |
 

@@ -20,8 +20,8 @@ docker build \
 ## Building from a clone
 
 The image builds are defined in [`docker-bake.hcl`](../docker-bake.hcl) and
-run with [Bun](https://bun.sh), which supplies the versions from
-`src/version.txt`:
+run with [Bun](https://bun.sh), which supplies the versions from the
+`version` field in `package.json`:
 
 ```console
 git clone https://github.com/felddy/foundryvtt-docker.git

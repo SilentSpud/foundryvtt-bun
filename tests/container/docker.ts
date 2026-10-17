@@ -1,8 +1,8 @@
 /** Helpers for driving the image under test with the docker CLI. */
 
-import { readFileSync } from "node:fs";
+import { containerVersion } from "../../tools/version.ts";
 
-export const PROJECT_VERSION = readFileSync("src/version.txt", "utf8").trim();
+export const PROJECT_VERSION = containerVersion();
 /** The image under test; defaults to the tag `bun run image` builds. */
 export const IMAGE =
     process.env.IMAGE_TAG || `ghcr.io/felddy/foundryvtt:${PROJECT_VERSION}`;

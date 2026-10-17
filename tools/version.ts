@@ -9,24 +9,28 @@
 
 import { readFileSync } from "node:fs";
 
-import { parse } from "./semver.ts";
+export const PACKAGE_FILE = "package.json";
 
-export const VERSION_FILE = "src/version.txt";
+const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.+-]+)?$/;
 
-/** The container version (semver x.y.z) from src/version.txt. */
-export function containerVersion(file: string = VERSION_FILE): string {
-    const version = readFileSync(file, "utf8").trim();
-    if (!version) {
-        throw new Error(`${file} is missing or empty`);
+/** The container version (semver x.y.z) from package.json. */
+export function containerVersion(file: string = PACKAGE_FILE): string {
+    const { version } = JSON.parse(readFileSync(file, "utf8")) as {
+        version?: unknown;
+    };
+    if (typeof version !== "string" || !SEMVER_RE.test(version)) {
+        throw new Error(`${file} has no valid semver "version"`);
     }
-    parse(version); // validate
     return version;
 }
 
 /** The Foundry version ("generation.build") for a container version. */
 export function foundryVersion(container: string): string {
-    const v = parse(container);
-    return `${v.major}.${v.minor}`;
+    const match = SEMVER_RE.exec(container);
+    if (!match) {
+        throw new Error(`Invalid semver: ${container}`);
+    }
+    return `${match[1]}.${match[2]}`;
 }
 
 if (import.meta.main) {

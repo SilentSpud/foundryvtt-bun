@@ -47,8 +47,3 @@
   - head-branch:
       # Any Lineage pull requests should use this branch.
       - lineage/skeleton
-
-"version bump :bookmark:":
-  - changed-files:
-      - any-glob-to-any-file:
-          - src/version.txt

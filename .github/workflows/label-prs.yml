@@ -45,3 +45,17 @@ jobs:
           permissions_monitoring_config: ${{ vars.ACTIONS_PERMISSIONS_CONFIG }}
       - name: Apply suitable labels to a pull request
         uses: actions/labeler@v7
+      # actions/labeler matches paths only, and package.json changes with
+      # every dependency update, so look for the version line itself.
+      - name: Label version bumps
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          diff=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY")
+          if awk '/^diff --git /{f=($3=="a/package.json")}
+                  f && /^[-+]  "version":/{found=1}
+                  END{exit !found}' <<< "$diff"; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" \
+              --add-label "version bump :bookmark:"
+          fi
