@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+        with:
+          persist-credentials: false
 
       # Foundry publishes releases as milestones titled "V14 Stable 11 - 14.369".
       - name: Find the latest stable release

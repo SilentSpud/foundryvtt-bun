@@ -18,6 +18,8 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: docker-compose
     directories:
@@ -36,6 +38,8 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: github-actions
     directory: /
@@ -50,6 +54,8 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+    cooldown:
+      default-days: 7
 
   # The project itself and the Foundry VTT CLI installed into the image.
   - package-ecosystem: bun
@@ -67,3 +73,5 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+    cooldown:
+      default-days: 7

@@ -36,7 +36,7 @@ permissions:
 jobs:
   config:
     name: Config
-    uses: ./.github/workflows/_config.yml
+    uses: $/.github/workflows/_config.yml
 
   lint:
     name: Lint
@@ -46,10 +46,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # tag=v2.2.0
         with:
           bun-version-file: package.json
+          no-cache: true
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Lint
@@ -63,10 +66,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # tag=v2.2.0
         with:
           bun-version-file: package.json
+          no-cache: true
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Run unit tests
@@ -111,7 +117,7 @@ jobs:
     if: |
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    uses: ./.github/workflows/_container-build.yml
+    uses: $/.github/workflows/_container-build.yml
     permissions:
       contents: read
       packages: write
@@ -135,7 +141,7 @@ jobs:
       needs.secret-check.outputs.preinstall == 'true' && (
         github.event_name != 'pull_request' ||
         github.event.pull_request.head.repo.full_name == github.repository)
-    uses: ./.github/workflows/_container-build.yml
+    uses: $/.github/workflows/_container-build.yml
     permissions:
       contents: read
       packages: write
@@ -156,7 +162,7 @@ jobs:
     needs:
       - config
       - build
-    uses: ./.github/workflows/_container-test.yml
+    uses: $/.github/workflows/_container-test.yml
     permissions:
       actions: read
       contents: read
@@ -173,7 +179,7 @@ jobs:
     needs:
       - config
       - build-preinstalled
-    uses: ./.github/workflows/_container-test.yml
+    uses: $/.github/workflows/_container-test.yml
     permissions:
       actions: read
       contents: read
@@ -228,7 +234,7 @@ jobs:
     if: |
       !cancelled() && needs.build.result == 'success' && needs.test.result == 'success' &&
       contains(fromJSON('["success", "skipped"]'), needs.test-preinstalled.result)
-    uses: ./.github/workflows/_container-publish.yml
+    uses: $/.github/workflows/_container-publish.yml
     permissions:
       actions: read
       attestations: write
@@ -246,7 +252,7 @@ jobs:
       - build-preinstalled
       - test
       - test-preinstalled
-    uses: ./.github/workflows/_container-publish.yml
+    uses: $/.github/workflows/_container-publish.yml
     permissions:
       actions: read
       attestations: write
@@ -308,6 +314,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+        with:
+          persist-credentials: false
       - name: Update the Docker Hub overview
         env:
           BLOB_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}
