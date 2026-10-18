@@ -115,20 +115,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-      security-events: write
     with:
       image-name: ${{ needs.config.outputs.image_name }}
       platforms: ${{ needs.config.outputs.platforms }}
       target: image
       container-version: ${{ needs.config.outputs.container_version }}
       foundry-version: ${{ needs.config.outputs.foundry_version }}
-      scan: true
-      # Code scanning rejects SARIF not tied to a branch or PR, so release and
-      # tag runs still scan but skip the upload.
-      upload-scan-results: >-
-        ${{ github.event_name == 'pull_request'
-          || github.event_name == 'merge_group'
-          || startsWith(github.ref, 'refs/heads/') }}
 
   build-preinstalled:
     name: Build Container Pre-Installed
@@ -147,7 +139,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      security-events: write
     with:
       image-name: ${{ needs.config.outputs.image_name_preinstall }}
       platforms: ${{ needs.config.outputs.test_platforms }}

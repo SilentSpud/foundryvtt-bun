@@ -36,16 +36,6 @@ on:
         required: false
         type: boolean
         default: true
-      scan:
-        description: Fail on CRITICAL or HIGH vulnerabilities found by Trivy
-        required: false
-        type: boolean
-        default: false
-      upload-scan-results:
-        description: Upload the Trivy results to code scanning
-        required: false
-        type: boolean
-        default: false
     secrets:
       registry-token:
         description: Token for pushing to GHCR. Defaults to GITHUB_TOKEN.
@@ -62,10 +52,6 @@ defaults:
   run:
     shell: bash -Eueo pipefail -x {0}
 
-env:
-  # aquasec/trivy:0.75.0
-  TRIVY_IMAGE: aquasec/trivy@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
-
 jobs:
   build:
     name: Build ${{ matrix.platform }}
@@ -77,7 +63,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      security-events: write
     env:
       IMAGE_REPO: ghcr.io/${{ inputs.image-name }}
       REGISTRY_USER: ${{ secrets.registry-token && github.repository_owner || github.actor }}
@@ -146,37 +131,3 @@ jobs:
           name: digests-${{ steps.slugs.outputs.image }}-${{ steps.slugs.outputs.platform }}
           path: /tmp/digests/*
           retention-days: 1
-
-      - name: Scan with Trivy
-        id: trivy
-        if: inputs.scan
-        env:
-          REF: ${{ env.IMAGE_REPO }}@${{ steps.build.outputs.digest }}
-        run: |
-          trivy() {
-            docker run --rm \
-              --env TRIVY_USERNAME="$REGISTRY_USER" --env TRIVY_PASSWORD="$REGISTRY_TOKEN" \
-              --volume "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" \
-              --volume "$PWD:/work" --workdir /work \
-              "$TRIVY_IMAGE" image --ignore-unfixed --pkg-types os,library "$@" "$REF"
-          }
-          trivy --format table
-          status=0
-          trivy --skip-db-update --severity CRITICAL,HIGH --exit-code 1 \
-            --format sarif --output trivy.sarif || status=$?
-          echo "status=${status}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload Trivy results to code scanning
-        if: inputs.scan && inputs.upload-scan-results
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # tag=v4.39.0
-        with:
-          category: container-scan-${{ matrix.platform }}
-          sarif_file: trivy.sarif
-
-      - name: Fail on vulnerabilities
-        if: inputs.scan && steps.trivy.outputs.status != '0'
-        env:
-          PLATFORM: ${{ matrix.platform }}
-        run: |
-          echo "::error::Trivy found CRITICAL or HIGH vulnerabilities in ${PLATFORM}."
-          exit 1

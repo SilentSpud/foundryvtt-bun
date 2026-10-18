@@ -3,10 +3,10 @@
 ARG CONTAINER_VERSION
 ARG FOUNDRY_RELEASE_URL
 ARG FOUNDRY_VERSION
-# Must match the Debian release the Bun image in patched-base is built on.
+# Must match the Debian release the Bun image in base is built on.
 ARG DEBIAN_SUITE=trixie
 
-# BuildKit revalidates remote ADDs every build, so patched-base rebuilds exactly
+# BuildKit revalidates remote ADDs every build, so base rebuilds exactly
 # when the security archives are republished instead of caching its upgrade
 # forever.  The files are only bind-mounted, never committed to a layer.
 FROM scratch AS archive-state
@@ -17,13 +17,11 @@ ADD https://deb.debian.org/debian/dists/${DEBIAN_SUITE}-updates/InRelease /updat
 # Debian, not Alpine: Foundry's LevelDB addon has no musl build for arm64.
 # The upstream rootfs lacks <suite>-security fixes until a point release, so
 # apply them here for every downstream stage.
-FROM oven/bun:1.4.3-slim AS patched-base
+FROM oven/bun:1.4.3-slim AS base
 RUN --mount=type=bind,from=archive-state,target=/run/archive-state \
   apt-get update \
   && apt-get upgrade -y --with-new-pkgs \
   && rm -rf /var/lib/apt/lists/*
-
-FROM patched-base AS base
 
 # yargs reports the version of the nearest package.json, which is this
 # install manifest, so stamp the CLI's version into it.
@@ -108,19 +106,16 @@ ENV HOME=/home/node
 WORKDIR $HOME
 
 # Packages come before the application files so this layer stays cached
-# across code changes.  The entrypoint extracts releases with unzip, runs
-# patch scripts with bash, and reports mounts with findmnt; curl, jq, patch,
-# and sed stay available to user patch scripts.
+# across code changes.  The entrypoint extracts releases with unzip; curl, jq,
+# and patch are for user patch scripts.  bash, sed, and findmnt (util-linux)
+# are Essential in Debian.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  bash \
   ca-certificates \
   curl \
   jq \
   patch \
-  sed \
   tzdata \
   unzip \
-  util-linux \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=optional-release-stage /root/dist/ .
