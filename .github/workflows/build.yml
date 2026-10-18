@@ -338,12 +338,18 @@ jobs:
           IMAGE_NAME: ${{ needs.config.outputs.image_name }}
         run: |
           # Docker Hub resolves no relative links and caps the overview at
-          # 25,000 characters, so absolutize links and cut at a paragraph break.
+          # 25,000 characters, so absolutize links and cut at the last whole
+          # line that fits.  A cut table simply ends early, and a cut code
+          # block is closed.
           sed -E "s|\]\((\./)?([^)#:]+)\)|](${BLOB_URL}/\2)|g" README.md > /tmp/readme.md
           if (( $(wc -c < /tmp/readme.md) > 24000 )); then
-            head -c 24000 /tmp/readme.md | sed '$d' \
-              | awk '/^$/{last=NR} {lines[NR]=$0} END{for (i = 1; i < last; i++) print lines[i]}' \
-              > /tmp/short.md
+            LC_ALL=C awk -v max=24000 '
+              { size += length($0) + 1 }
+              size > max { exit }
+              /^ *(```|~~~)/ { fence = !fence }
+              { print }
+              END { if (fence) print "```" }
+            ' /tmp/readme.md > /tmp/short.md
             printf '\nThe full documentation is in the [README](%s/README.md).\n' "$BLOB_URL" >> /tmp/short.md
             mv /tmp/short.md /tmp/readme.md
           fi
