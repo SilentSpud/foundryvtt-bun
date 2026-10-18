@@ -1,6 +1,6 @@
 {
   "name": "foundryvtt-utils",
-  "version": "14.369.0",
+  "version": "14.369.1",
   "private": true,
   "description": "Utilities to help boot a FoundryVTT server.",
   "keywords": [
