@@ -1,8 +1,8 @@
 # Building the image
 
-Most users never need to build the image — pull a published tag as described in
-the [project README](../README.md). This guide is for contributors and for the
-rare case where a locally built or pre-loaded image is useful.
+Most users should pull a published tag as described in the
+[project README](../README.md). This guide is for contributors, and for the
+occasional case where you need a locally built or pre-installed image.
 
 ## Building from source
 
@@ -63,9 +63,9 @@ own, use Docker's
 ## Pre-installed distribution builds
 
 A Foundry Virtual Tabletop distribution can be installed into the image at
-build time. The resulting image is significantly larger, but it starts faster
-because nothing is downloaded at startup, and authentication happens at build
-time rather than at run time.
+build time. The image is much larger, but it starts faster because nothing is
+downloaded at startup, and authentication happens at build time instead of run
+time.
 
 ### Build with credentials
 
@@ -84,7 +84,7 @@ docker build \
 ```
 
 > [!TIP]
-> If your credentials are stored in a json file, as described in the
+> If your credentials are stored in a JSON file, as described in the
 > [secrets](../README.md#secrets) reference, extract and pass them as build
 > secrets:
 >
@@ -98,7 +98,7 @@ docker build \
 >   https://github.com/SilentSpud/foundryvtt-bun.git#main
 > ```
 
-More information about Docker build secrets is in the
+For more on build secrets, see the
 [Docker documentation](https://docs.docker.com/build/building/secrets/).
 
 ### Build with a temporary URL

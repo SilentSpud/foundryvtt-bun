@@ -28,8 +28,8 @@ graph LR
 
 > [!NOTE]
 > Running on Kubernetes? The [Kubernetes guide](../kubernetes/README.md#publish-through-a-cloudflare-tunnel)
-> shows the tunnel as a Gateway API implementation instead — no `cloudflared`
-> service to manage yourself.
+> shows the tunnel as a Gateway API implementation instead, so there's no
+> `cloudflared` service to manage yourself.
 
 ## Prerequisites
 
@@ -106,7 +106,7 @@ graph LR
   restarts.
 
 > [!IMPORTANT]
-> `tunnel_creds.json` grants control of your tunnel — keep it secret. This
+> `tunnel_creds.json` grants control of your tunnel, so keep it secret. This
 > recipe's `.gitignore` already excludes it from version control.
 
 [Cloudflare Tunnel]: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/

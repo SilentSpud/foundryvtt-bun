@@ -4,9 +4,8 @@ The [project README](../../README.md) is the reference for the image itself: its
 [tags](../../README.md#image-tags), [volumes](../../README.md#volumes),
 [ports](../../README.md#ports),
 [environment variables](../../README.md#environment-variables), and
-[secrets](../../README.md#secrets). The guides here show how to put that
-reference to work on a specific container runtime, plus a few worked examples
-("recipes") for common networking setups.
+[secrets](../../README.md#secrets). The guides here show how to run it on a
+specific container runtime, and the recipes cover common networking setups.
 
 > [!NOTE]
 > Every example pins the image to the major version tag `:14`, matching the
@@ -16,16 +15,16 @@ reference to work on a specific container runtime, plus a few worked examples
 
 ## Choose a runtime
 
-| Guide                               | Use it when...                                                                                                                                                                      |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Kubernetes](kubernetes/README.md)  | You run a cluster, or you want to host one or several Foundry instances with declarative manifests — optionally published through a Cloudflare Tunnel with a shared download cache. |
-| [Podman](podman.md)                 | You prefer a daemonless, rootless runtime, or you want the server managed as a `systemd` service.                                                                                   |
-| [Docker Compose](docker-compose.md) | You want the simplest single-host setup, with the image, configuration, storage, and ports captured in one file.                                                                    |
+| Guide                               | Use it when...                                                                                                                                                                     |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Kubernetes](kubernetes/README.md)  | You run a cluster, or you want to host one or several Foundry instances with declarative manifests, optionally published through a Cloudflare Tunnel with a shared download cache. |
+| [Podman](podman.md)                 | You prefer a daemonless, rootless runtime, or you want the server managed as a `systemd` service.                                                                                  |
+| [Docker Compose](docker-compose.md) | You want the simplest single-host setup, with the image, configuration, storage, and ports captured in one file.                                                                   |
 
 ## Recipes
 
-These build on a runtime guide to solve a specific networking problem. They are
-written as Compose examples that work with both Docker and Podman.
+Each recipe builds on a runtime guide to solve one networking problem. They're
+Compose files that work with Docker and Podman.
 
 | Recipe                                                    | What it does                                                                                                       |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |

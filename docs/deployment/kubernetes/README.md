@@ -1,23 +1,22 @@
 # Deploying on Kubernetes
 
 This guide runs Foundry Virtual Tabletop on a Kubernetes cluster using a small
-set of plain manifests. They are intentionally generic — no specific gateway
-controller, storage provider, or secrets tooling is assumed — so you can adapt
-them to your environment.
+set of plain manifests. They don't assume a particular gateway controller,
+storage provider, or secrets tooling, so you can adapt them to your
+environment.
 
-The deployment is built up in stages, and every stage follows the same
-rhythm: a diagram of the target, the files involved, the steps to apply them,
-and the reasoning behind the choices. Each stage is a complete, working
-system — stop whenever you have what you need:
+The guide builds the deployment in stages. Each has a diagram, the files
+involved, the steps to apply them, and an explanation of the choices. Every
+stage leaves you with a working system, so stop once you have what you need:
 
-1. [Deploy a single instance](#deploy-a-single-instance) — the
+1. [Deploy a single instance](#deploy-a-single-instance): the
    [`manifests/`](manifests) base.
-1. [Add a staging instance](#add-a-staging-instance) — a thin overlay over
+1. [Add a staging instance](#add-a-staging-instance): a thin overlay over
    the same base.
-1. [Share the download cache](#share-the-download-cache) — every instance
-   downloads a release once, together.
-1. [Publish through a Cloudflare Tunnel](#publish-through-a-cloudflare-tunnel)
-   — the whole system on the internet, with no open ports.
+1. [Share the download cache](#share-the-download-cache): download each
+   release once for every instance.
+1. [Publish through a Cloudflare Tunnel](#publish-through-a-cloudflare-tunnel):
+   the whole system on the internet, with no open ports.
 
 ## Prerequisites
 
@@ -94,14 +93,14 @@ base pinned to the major image tag `:14`:
 
 - **Stable hostname for licensing.** Foundry binds its license to the container
   hostname. The Deployment sets `hostname: foundryvtt` so the binding survives
-  pod restarts. `FOUNDRY_HOSTNAME` is separate — it is the public address
+  pod restarts. `FOUNDRY_HOSTNAME` is separate: it is the public address
   Foundry advertises in invitation links.
 
 - **One replica, `Recreate` strategy.** Foundry writes to a single
   `ReadWriteOnce` volume and is not designed to run as multiple concurrent
   replicas. `replicas: 1` plus `strategy: Recreate` guarantees the old pod
   releases the volume before the new pod claims it. (To run _several_ games,
-  see [adding a staging instance](#add-a-staging-instance) — each is its own
+  see [adding a staging instance](#add-a-staging-instance); each is its own
   single-replica deployment.)
 
 - **Hardened, read-only root filesystem.** The pod runs as non-root
@@ -133,10 +132,9 @@ base pinned to the major image tag `:14`:
 
 ## Add a staging instance
 
-A second, independent Foundry server — for example a stable "production"
-table and a "staging" instance for testing modules — built from the same base
-with a thin overlay. This is exactly how the maintainer runs production and
-staging side by side.
+A second, independent Foundry server built from the same base with a thin
+overlay, for example a "staging" instance for testing modules next to your
+"production" table. The maintainer runs production and staging this way.
 
 ```mermaid
 graph LR
@@ -198,7 +196,7 @@ patches:
    kubectl apply -k overlays/staging/
    ```
 
-1. Watch it start, exactly as in the first stage:
+1. Watch it start, the same way as in the first stage:
 
    ```console
    kubectl --namespace foundryvtt-staging rollout status deployment/foundryvtt
@@ -210,22 +208,22 @@ patches:
   an overlay patches only what differs. A fix to the base reaches every
   instance on its next apply.
 
-- **Everything that must be unique, is.** The namespace keeps resources from
+- **Per-instance resources.** The namespace keeps resources from
   colliding, each instance gets its own `PersistentVolumeClaim` (game data is
-  never shared) and its own `Secret`, and the three hostnames — container
-  `hostname` (license binding), `FOUNDRY_HOSTNAME` (invitation links), and the
-  `HTTPRoute` hostname (routing) — are distinct and stable per instance.
+  never shared) and its own `Secret`, and the three hostnames (container
+  `hostname` for license binding, `FOUNDRY_HOSTNAME` for invitation links, and
+  the `HTTPRoute` hostname for routing) are distinct and stable per instance.
 
 > [!NOTE]
 > Different instances can run different Foundry versions. Pin each overlay's
-> image tag — for example `:14.369` for an exact minor release — and set the
+> image tag (for example `:14.369` for an exact minor release) and set the
 > `FOUNDRY_VERSION` environment variable to match the version you want
 > installed.
 
 ## Share the download cache
 
-One cache volume serving every instance, so each Foundry release is
-downloaded exactly once no matter how many instances want it. This stage
+One cache volume shared by every instance, so each Foundry release is
+downloaded once no matter how many instances need it. This stage
 needs a `StorageClass` capable of `ReadWriteMany` (NFS, CephFS, EFS, Azure
 Files, and similar).
 
@@ -295,24 +293,24 @@ Each instance adds a claim and a small Deployment patch to its overlay:
 
 ### How it works
 
-- **Start-ups coordinate through the cache itself.** One instance downloads a
-  release while the others wait for the finished file; a crashed downloader's
-  claim is taken over; different versions never collide.
+- **Startups coordinate through the cache.** One instance downloads a release
+  while the others wait for the finished file. If the downloader crashes,
+  another instance takes over, and different versions never collide.
 
 - **Namespaces don't share claims.** `PersistentVolumeClaim`s are namespaced,
   so instances in different namespaces need their claims provisioned onto the
-  same backing directory — for example an NFS CSI storage class with a fixed
+  same backing directory, for example an NFS CSI storage class with a fixed
   `subDir`, or static `PersistentVolume`s pointing at one export.
 
 > [!NOTE]
 > `CONTAINER_CACHE_SIZE` eviction is least-recently-used, so a cache shared
-> across major versions keeps whatever its instances actually install — an
+> across major versions keeps whatever its instances actually install. An
 > older major's release survives as long as some instance still uses it.
 
 ## Publish through a Cloudflare Tunnel
 
-The whole system on the internet with no inbound ports: a [Cloudflare Tunnel]
-acts as the Gateway implementation, so the `HTTPRoute`s are unchanged except
+This stage puts the whole system on the internet with no inbound ports. A
+[Cloudflare Tunnel] acts as the Gateway implementation, so the `HTTPRoute`s are unchanged except
 for their `parentRefs`. TLS terminates at Cloudflare's edge and `cloudflared`
 maintains outbound-only connections. This stage needs a
 [Cloudflare](https://www.cloudflare.com) account with a domain you manage.
@@ -407,19 +405,19 @@ spec:
 
 ### How it works
 
-- **The controller does the lifting.** It creates and manages the tunnel and
+- **The controller manages the tunnel.** It creates and manages the tunnel and
   its `cloudflared` Deployment, and publishes a DNS record for every
-  `HTTPRoute` hostname — there is no port forwarding or NAT to configure.
+  `HTTPRoute` hostname. There is no port forwarding or NAT to configure.
 
-- **The application never noticed.** Routing stayed an `HTTPRoute`; only the
+- **Routing is unchanged.** It's still an `HTTPRoute`; only the
   `parentRefs` changed. `FOUNDRY_PROXY_SSL=true` keeps invitation links and
   audio/video on `https`, now terminated at Cloudflare's edge.
 
 > [!TIP]
-> The tunnel and an in-cluster `Gateway` compose nicely: keep a second
+> The tunnel works alongside an in-cluster `Gateway`. Keep a second
 > `HTTPRoute` attached to an internal Gateway with a LAN-only hostname, and
 > the same Service is reachable both from the internet (through the tunnel)
-> and directly on your network — split-horizon with no extra application
+> and directly on your network (split horizon), with no extra application
 > configuration.
 
 ## Updating

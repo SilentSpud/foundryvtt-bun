@@ -1,9 +1,9 @@
 # Deploying with Docker Compose
 
 [Docker Compose] is the simplest way to run a single Foundry Virtual Tabletop
-instance on one host. A `compose.yaml` file captures the image, configuration,
-storage, and ports in one place, so the server is easy to start, stop, and
-reproduce.
+instance on one host. One `compose.yaml` file holds the image, configuration,
+storage, and ports, so you can start, stop, or rebuild the server with one
+command.
 
 This guide covers a complete single-host deployment. For the full catalog of
 settings, see the [environment variables] and [secrets] sections of the project
@@ -64,7 +64,7 @@ README.
 [Configuration options] are supplied as [environment variables]. Each time the
 container starts, it regenerates Foundry's configuration files from those
 variables. This means **changes made in the in-application configuration GUI do
-not persist across restarts** — manage configuration through `compose.yaml`
+not persist across restarts**. Manage configuration through `compose.yaml`
 instead. To preserve hand-edited configuration files, set
 `CONTAINER_PRESERVE_CONFIG` to `true`.
 

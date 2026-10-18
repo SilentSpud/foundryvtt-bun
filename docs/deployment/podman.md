@@ -4,7 +4,7 @@
 The image is [OCI] compliant, so everything in the
 [Docker Compose guide](docker-compose.md) applies here too: `podman` mirrors the
 `docker` command line, and `podman compose` reads the same `compose.yaml`. This
-guide focuses on the Podman-specific details.
+guide covers only what differs under Podman.
 
 ## Prerequisites
 
@@ -85,8 +85,8 @@ image expects it.
 ## Using Compose
 
 `podman compose` (or the `podman-compose` package) runs the examples from the
-[Docker Compose guide](docker-compose.md) and the recipes unchanged — substitute
-`podman compose` for `docker compose`.
+[Docker Compose guide](docker-compose.md) and the recipes unchanged. Use
+`podman compose` in place of `docker compose`.
 
 ## Updating
 

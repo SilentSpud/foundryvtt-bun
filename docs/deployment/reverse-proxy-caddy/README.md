@@ -29,7 +29,7 @@ graph LR
   [Podman](../podman.md)).
 - A domain name with a DNS `A`/`AAAA` record pointing at the host.
 - Inbound TCP `80` and `443` (and UDP `443` for HTTP/3) reachable from the
-  internet — Caddy needs them to obtain certificates.
+  internet. Caddy needs them to obtain certificates.
 
 ## Deploy
 

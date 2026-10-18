@@ -1,41 +1,29 @@
-# Welcome
+# Contributing
 
-We're so glad you're thinking about contributing to this open source
-project! If you're unsure or afraid of anything, just ask or submit
-the issue or pull request anyway. The worst that can happen is that
-you'll be politely asked to change something. We appreciate any sort
-of contribution, and don't want a wall of rules to get in the way of
-that.
+Thanks for considering a contribution. If you're unsure about anything, ask,
+or open the issue or pull request anyway. The worst that can happen is a
+polite request to change something.
 
-Before contributing, we encourage you to read our CONTRIBUTING policy
-(you are here), our [LICENSE](LICENSE), and our [README](README.md),
-all of which should be in this repository.
+Before contributing, read this guide, the [LICENSE](LICENSE), and the
+[README](README.md).
 
 ## Issues
 
-If you want to report a bug or request a new feature, the most direct
-method is to [create an
-issue](https://github.com/SilentSpud/foundryvtt-bun/issues) in this
-repository. We recommend that you first search through existing
-issues (both open and closed) to check if your particular issue has
-already been reported. If it has then you might want to add a comment
-to the existing issue. If it hasn't then feel free to create a new
-one.
+To report a bug or request a feature,
+[open an issue](https://github.com/SilentSpud/foundryvtt-bun/issues). Search
+existing issues, open and closed, first. If yours is already there, add a
+comment to it instead.
 
 ## Pull requests
 
 If you choose to [submit a pull
 request](https://github.com/SilentSpud/foundryvtt-bun/pulls), you will
-notice that our continuous integration (CI) system runs a fairly
-extensive set of linters and syntax checkers. Your pull request may
-fail these checks, and that's OK. If you want you can stop there and
-wait for us to make the necessary corrections to ensure your code
-passes the CI checks.
+notice that CI runs a set of linters and syntax checkers. If your pull request
+fails them, that's OK. You can leave it there and we'll make the fixes.
 
-If you want to make the changes yourself, or if you want to become a
-regular contributor, then set up a development environment as described
-below. A git pre-commit hook then runs the CI lint checks locally before
-you even write your commit message.
+To fix them yourself, or if you plan to contribute regularly, set up the
+development environment below. Its pre-commit hook runs the CI lint checks
+locally before you write your commit message.
 
 ### Setting up a development environment
 
