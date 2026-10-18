@@ -57,6 +57,24 @@ download and start a real release.
 At this point `bun run lint` runs before every commit. The file checks read
 staged content, so stage your changes before running them by hand.
 
+## Releasing
+
+Releases are cut by pushing a tag, not by publishing a release on GitHub.
+Once the version bump from `bun run release <x.y.z>` is on `main`, tag that
+commit:
+
+```console
+git tag v14.369.0
+git push origin v14.369.0
+```
+
+The build workflow checks that the tag matches `package.json`, publishes the
+images, attaches an SBOM for each platform to a draft release with generated
+notes, and then publishes the release. Release assets are attached while the
+release is still a draft, so this works with immutable releases. A version
+with a suffix (for example `14.369.0-rc.1`) becomes a prerelease and is not
+mirrored to Docker Hub.
+
 ## License
 
 This project is released as open source under the [MIT license](LICENSE).

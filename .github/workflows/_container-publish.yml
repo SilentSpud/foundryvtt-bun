@@ -18,6 +18,21 @@ on:
         description: JSON array of platforms in the manifest
         required: true
         type: string
+      release-version:
+        description: The version being released; empty for other builds
+        required: false
+        type: string
+        default: ""
+      prerelease:
+        description: Tag the release as a prerelease
+        required: false
+        type: boolean
+        default: false
+      latest:
+        description: Also tag the release as release and latest
+        required: false
+        type: boolean
+        default: false
       sbom:
         description: >
           Attest a CycloneDX SBOM for each platform and upload it as an
@@ -29,9 +44,6 @@ on:
       tag-names:
         description: The tags applied, space-separated (e.g. "14.369.0 14.369 14")
         value: ${{ jobs.publish.outputs.tag-names }}
-      is-latest:
-        description: Whether this run published the latest release
-        value: ${{ jobs.publish.outputs.is-latest }}
 
 # errtrace, nounset, errexit, and pipefail; -x echoes each command.
 defaults:
@@ -51,7 +63,6 @@ jobs:
     outputs:
       digest: ${{ steps.manifest.outputs.digest }}
       tag-names: ${{ steps.tags.outputs.names }}
-      is-latest: ${{ steps.tags.outputs.is-latest }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       IMAGE_REPO: ghcr.io/${{ inputs.image-name }}
@@ -60,12 +71,15 @@ jobs:
         id: tags
         env:
           EVENT: ${{ github.event_name }}
+          LATEST: ${{ inputs.latest }}
           PR: ${{ github.event.pull_request.number }}
-          PRERELEASE: ${{ github.event.release.prerelease }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          VERSION: ${{ inputs.release-version }}
         run: |
           sha="sha-${GITHUB_SHA:0:7}"
-          is_latest=false
+          if [[ -n "$VERSION" ]]; then
+            EVENT=release
+          fi
           case "$EVENT" in
             pull_request)
               tags=("pr-${PR}" "$sha")
@@ -76,17 +90,14 @@ jobs:
               tags=("$branch" "$sha")
               ;;
             release)
-              version="${RELEASE_TAG#v}"
               if [[ "$PRERELEASE" == "true" ]]; then
-                tags=("$version" prerelease)
+                tags=("$VERSION" prerelease)
               else
-                tags=("$version")
-                if [[ "$version" =~ ^([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
+                tags=("$VERSION")
+                if [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
                   tags+=("${BASH_REMATCH[1]}.${BASH_REMATCH[2]}" "${BASH_REMATCH[1]}")
                 fi
-                latest=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)
-                if [[ "$latest" == "$RELEASE_TAG" ]]; then
-                  is_latest=true
+                if [[ "$LATEST" == "true" ]]; then
                   tags+=(release latest)
                 fi
               fi
@@ -103,7 +114,6 @@ jobs:
               ;;
           esac
           echo "names=${tags[*]}" >> "$GITHUB_OUTPUT"
-          echo "is-latest=${is_latest}" >> "$GITHUB_OUTPUT"
 
       - name: Download digests
         env:

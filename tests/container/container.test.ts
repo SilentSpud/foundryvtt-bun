@@ -363,10 +363,10 @@ test.skipIf(!process.env.RELEASE_TAG)(
 );
 
 // The version label is added by the GitHub Actions build workflow, so it is
-// only checked during release builds there.
+// only checked during release (tag) builds there.
 test.skipIf(
     process.env.GITHUB_ACTIONS !== "true" ||
-        process.env.GITHUB_EVENT_NAME !== "release",
+        process.env.GITHUB_REF_TYPE !== "tag",
 )("container version label matches the project version", async () => {
     const label = await docker(
         "inspect",

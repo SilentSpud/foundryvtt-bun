@@ -28,6 +28,15 @@ on:
       test_platforms:
         description: The platform to use for testing (JSON array string)
         value: '["linux/amd64"]'
+      release_version:
+        description: The version a v* tag push releases; empty for other events
+        value: ${{ jobs.config.outputs.release_version }}
+      release_prerelease:
+        description: Whether the release is a prerelease
+        value: ${{ jobs.config.outputs.release_prerelease }}
+      release_latest:
+        description: Whether the release becomes the latest one
+        value: ${{ jobs.config.outputs.release_latest }}
 
 jobs:
   config:
@@ -39,6 +48,9 @@ jobs:
       container_version: ${{ steps.version.outputs.container_version }}
       foundry_version: ${{ steps.version.outputs.foundry_version }}
       image_name: ${{ steps.image.outputs.name }}
+      release_version: ${{ steps.release.outputs.version }}
+      release_prerelease: ${{ steps.release.outputs.prerelease }}
+      release_latest: ${{ steps.release.outputs.latest }}
     steps:
       # Registries require lowercase names, and expressions cannot lowercase.
       - name: Derive the image name from the repository owner
@@ -57,3 +69,34 @@ jobs:
       - name: Emit version outputs
         id: version
         run: bun tools/version.ts --github-output >> "$GITHUB_OUTPUT"
+      # A version with a suffix (14.369.0-rc.1) is a prerelease, and a release
+      # is the latest unless a newer one is already published.
+      - name: Classify the release
+        id: release
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.container_version }}
+        run: |
+          if [[ "$TAG" != "v${VERSION}" ]]; then
+            echo "::error::Tag ${TAG} does not match the package.json version ${VERSION}."
+            exit 1
+          fi
+          prerelease=false
+          latest=false
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            prerelease=true
+          else
+            # releases/latest is a 404 until the first release.
+            current=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name 2> /dev/null || true)
+            newest=$(printf '%s\n%s\n' "${current#v}" "$VERSION" | sort -V | tail -n 1)
+            if [[ "$newest" == "$VERSION" ]]; then
+              latest=true
+            fi
+          fi
+          {
+            echo "version=${VERSION}"
+            echo "prerelease=${prerelease}"
+            echo "latest=${latest}"
+          } >> "$GITHUB_OUTPUT"

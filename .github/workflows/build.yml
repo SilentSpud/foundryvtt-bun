@@ -11,10 +11,9 @@ on:
       - develop
       - develop-*
       - main
-  release:
-    types:
-      - edited
-      - published
+    # Pushing a v* tag releases it; see the release job.
+    tags:
+      - v*
   schedule:
     - cron: 0 10 * * *
   workflow_dispatch:
@@ -230,14 +229,17 @@ jobs:
     with:
       image-name: ${{ needs.config.outputs.image_name }}
       platforms: ${{ needs.config.outputs.platforms }}
+      release-version: ${{ needs.config.outputs.release_version }}
+      prerelease: ${{ needs.config.outputs.release_prerelease == 'true' }}
+      latest: ${{ needs.config.outputs.release_latest == 'true' }}
       sbom: true
 
-  release-sbom:
-    name: Attach SBOMs to the release
+  release:
+    name: Publish the GitHub release
     needs:
       - config
       - publish-manifest
-    if: github.event_name == 'release'
+    if: needs.config.outputs.release_version != ''
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -249,12 +251,24 @@ jobs:
         run: |
           gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --pattern 'sbom-*' --dir /tmp/sbom
-      - name: Upload the SBOMs as release assets
+      # Immutable releases reject assets once published, so the SBOMs go on
+      # a draft first.  A rerun picks up the draft an earlier attempt left.
+      - name: Attach the SBOMs to a draft and publish it
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_NAME: ${{ needs.config.outputs.image_name }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          LATEST: ${{ needs.config.outputs.release_latest }}
+          PRERELEASE: ${{ needs.config.outputs.release_prerelease }}
+          TAG: ${{ github.ref_name }}
         run: |
+          if ! draft=$(gh release view "$TAG" --json isDraft --jq .isDraft); then
+            gh release create "$TAG" --draft --verify-tag --generate-notes \
+              --prerelease="$PRERELEASE"
+          elif [[ "$draft" != "true" ]]; then
+            echo "::error::Release ${TAG} is already published."
+            exit 1
+          fi
           assets=()
           for dir in /tmp/sbom/sbom-*/; do
             platform=$(basename "$dir")
@@ -262,8 +276,8 @@ jobs:
             mv "${dir}sbom.cdx.json" "$asset"
             assets+=("$asset")
           done
-          # --clobber, since edited releases run again.
-          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$TAG" "${assets[@]}" --clobber
+          gh release edit "$TAG" --draft=false --prerelease="$PRERELEASE" --latest="$LATEST"
 
   mirror-to-dockerhub:
     name: Mirror images to Docker Hub
@@ -272,7 +286,8 @@ jobs:
       - secret-check
       - publish-manifest
     if: |
-      github.event_name == 'release' && !github.event.release.prerelease &&
+      needs.config.outputs.release_version != '' &&
+      needs.config.outputs.release_prerelease != 'true' &&
       needs.secret-check.outputs.dockerhub == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -304,9 +319,8 @@ jobs:
       - secret-check
       - publish-manifest
     if: |
-      github.event_name == 'release' && !github.event.release.prerelease &&
-      needs.secret-check.outputs.dockerhub == 'true' &&
-      needs.publish-manifest.outputs.is-latest == 'true'
+      needs.config.outputs.release_latest == 'true' &&
+      needs.secret-check.outputs.dockerhub == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
