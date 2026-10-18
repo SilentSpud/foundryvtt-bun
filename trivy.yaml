@@ -1,0 +1,16 @@
+# Settings shared by every Trivy scan; run them through .github/scripts/trivy.sh.
+db:
+  no-progress: true
+ignorefile: .trivyignore.yaml
+scan:
+  disable-telemetry: true
+  skip-dirs:
+    # Example deployments, not part of the image.
+    - docs/deployment
+  skip-files:
+    # Only a version pin for Dependabot, never built.
+    - docker/trivy/Dockerfile
+timeout: 15m
+vulnerability:
+  # The image rebuilds daily, so unfixed findings have no action to take.
+  ignore-unfixed: true

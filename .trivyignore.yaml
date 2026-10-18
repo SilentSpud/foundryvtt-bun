@@ -1,0 +1,11 @@
+# Accepted Trivy findings.  Give each entry a statement saying why, and an
+# expired_at date so it is reviewed again.
+#
+# vulnerabilities:
+#   - id: CVE-0000-00000
+#     statement: Not reachable; the affected code path is never loaded.
+#     expired_at: 2027-01-01
+vulnerabilities: []
+misconfigurations: []
+secrets: []
+licenses: []

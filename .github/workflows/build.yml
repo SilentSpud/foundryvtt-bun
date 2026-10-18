@@ -78,6 +78,51 @@ jobs:
       - name: Run unit tests
         run: bun test tests/unit
 
+  scan:
+    name: Scan Repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # tag=v2.2.0
+        with:
+          bun-version-file: package.json
+          no-cache: true
+      # Trivy reads package licenses from node_modules, not the lockfiles.
+      - name: Install production dependencies
+        run: |
+          bun install --frozen-lockfile --production --ignore-scripts
+          bun install --cwd docker/fvtt-cli --frozen-lockfile --production --ignore-scripts
+      # Licenses stay out of code scanning, which would open an alert for
+      # every permissive one.
+      - name: Scan with Trivy
+        run: |
+          .github/scripts/trivy.sh fs --scanners vuln,misconfig,secret \
+            --format sarif --output trivy-repository.sarif .
+      # Code scanning rejects SARIF not tied to a branch or PR, and fork PRs
+      # have a read-only token.
+      - name: Upload results to code scanning
+        if: |
+          github.event_name == 'merge_group' || startsWith(github.ref, 'refs/heads/') || (
+            github.event_name == 'pull_request' &&
+            github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # tag=v4.39.0
+        with:
+          category: trivy-repository
+          sarif_file: trivy-repository.sarif
+      # Misconfigurations are advisory.  HIGH licenses are copyleft ones, which
+      # the MIT-licensed bundles cannot carry.
+      - name: Fail on vulnerabilities, secrets, or copyleft licenses
+        run: |
+          .github/scripts/trivy.sh fs --skip-db-update --scanners vuln,secret,license \
+            --severity HIGH,CRITICAL --exit-code 1 .
+
   # Job-level `if:` cannot read secrets, so report which optional ones exist.
   secret-check:
     name: Check optional secrets
@@ -198,6 +243,7 @@ jobs:
       - config
       - lint
       - unit-test
+      - scan
       - secret-check
       - build
       - build-preinstalled
@@ -215,6 +261,7 @@ jobs:
           [[ "${{ needs.config.result }}"      == success ]] || { echo "config: ${{ needs.config.result }}";           exit 1; }
           [[ "${{ needs.lint.result }}"        == success ]] || { echo "lint: ${{ needs.lint.result }}";               exit 1; }
           [[ "${{ needs['unit-test'].result }}" == success ]] || { echo "unit-test: ${{ needs['unit-test'].result }}"; exit 1; }
+          [[ "${{ needs.scan.result }}"        == success ]] || { echo "scan: ${{ needs.scan.result }}";               exit 1; }
           [[ "${{ needs.secret-check.result }}"     == success ]] || { echo "secret-check: ${{ needs.secret-check.result }}";    exit 1; }
           # Skipped on fork PRs, and the preinstall jobs also without their secrets:
           [[ "${{ needs.build.result }}"              =~ ^(success|skipped)$ ]] || { echo "build: ${{ needs.build.result }}";                           exit 1; }

@@ -2,10 +2,12 @@
 version: 2
 
 updates:
-  # The root Dockerfile plus image tags in the Kubernetes manifests.
+  # The root Dockerfile, the Trivy pin, and image tags in the Kubernetes
+  # manifests.
   - package-ecosystem: docker
     directories:
       - /
+      - /docker/trivy
       - /docs/deployment/kubernetes/manifests
     schedule:
       interval: daily
