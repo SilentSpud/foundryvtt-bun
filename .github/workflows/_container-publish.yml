@@ -2,7 +2,8 @@
 name: Publish container manifest
 
 # Combines the per-platform digests from _container-build.yml into one tagged
-# manifest and attests its build provenance.
+# manifest, attests its build provenance, and optionally attests an SBOM for
+# each platform.
 
 permissions: {}
 
@@ -22,6 +23,14 @@ on:
         required: false
         type: boolean
         default: true
+      sbom:
+        description: >
+          Attest a CycloneDX SBOM for each platform and upload it as an
+          sbom-<platform> artifact.  Leave false for images that must stay
+          private, since attestations are public.
+        required: false
+        type: boolean
+        default: false
     secrets:
       registry-token:
         description: Token for pushing to GHCR. Defaults to GITHUB_TOKEN.
@@ -50,6 +59,7 @@ jobs:
       id-token: write
       packages: write
     outputs:
+      digest: ${{ steps.manifest.outputs.digest }}
       tag-names: ${{ steps.tags.outputs.names }}
       is-latest: ${{ steps.tags.outputs.is-latest }}
     env:
@@ -163,3 +173,68 @@ jobs:
           subject-name: ${{ env.IMAGE_REPO }}
           subject-digest: ${{ steps.manifest.outputs.digest }}
           push-to-registry: true
+
+  sbom:
+    name: SBOM ${{ matrix.platform }}
+    needs: publish
+    if: inputs.sbom
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(inputs.platforms) }}
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    env:
+      IMAGE_REPO: ghcr.io/${{ inputs.image-name }}
+      REGISTRY_USER: ${{ secrets.registry-token && github.repository_owner || github.actor }}
+      REGISTRY_TOKEN: ${{ secrets.registry-token || secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Log in to GHCR
+        run: docker login ghcr.io --username "$REGISTRY_USER" --password-stdin <<< "$REGISTRY_TOKEN"
+
+      - name: Find the platform image
+        id: image
+        env:
+          INDEX_DIGEST: ${{ needs.publish.outputs.digest }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          digest=$(docker buildx imagetools inspect "${IMAGE_REPO}@${INDEX_DIGEST}" --raw \
+            | jq -r --arg os "${PLATFORM%%/*}" --arg arch "${PLATFORM#*/}" \
+              '.manifests[] | select(.platform.os == $os and .platform.architecture == $arch) | .digest')
+          if [[ ! "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "::error::No single ${PLATFORM} image in ${INDEX_DIGEST}: ${digest}"
+            exit 1
+          fi
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          echo "slug=${PLATFORM//\//-}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate the SBOM
+        env:
+          REF: ${{ env.IMAGE_REPO }}@${{ steps.image.outputs.digest }}
+          TRIVY_USERNAME: ${{ env.REGISTRY_USER }}
+          TRIVY_PASSWORD: ${{ env.REGISTRY_TOKEN }}
+        run: .github/scripts/trivy.sh image --format cyclonedx --output sbom.cdx.json "$REF"
+
+      - name: Attest the SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # tag=v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE_REPO }}
+          subject-digest: ${{ steps.image.outputs.digest }}
+          sbom-path: sbom.cdx.json
+          push-to-registry: true
+
+      - name: Upload the SBOM
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # tag=v7.0.2
+        with:
+          if-no-files-found: error
+          name: sbom-${{ steps.image.outputs.slug }}
+          path: sbom.cdx.json

@@ -296,6 +296,7 @@ jobs:
     with:
       image-name: ${{ needs.config.outputs.image_name }}
       platforms: ${{ needs.config.outputs.platforms }}
+      sbom: true
 
   publish-manifest-preinstalled:
     name: Publish Manifest Pre-Installed
@@ -317,6 +318,39 @@ jobs:
       link-repository: false
     secrets:
       registry-token: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
+
+  release-sbom:
+    name: Attach SBOMs to the release
+    needs:
+      - config
+      - publish-manifest
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download the SBOMs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'sbom-*' --dir /tmp/sbom
+      - name: Upload the SBOMs as release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_NAME: ${{ needs.config.outputs.image_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          assets=()
+          for dir in /tmp/sbom/sbom-*/; do
+            platform=$(basename "$dir")
+            asset="/tmp/${IMAGE_NAME##*/}-${platform#sbom-}.cdx.json"
+            mv "${dir}sbom.cdx.json" "$asset"
+            assets+=("$asset")
+          done
+          # --clobber, since edited releases run again.
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber --repo "$GITHUB_REPOSITORY"
 
   mirror-to-dockerhub:
     name: Mirror images to Docker Hub
