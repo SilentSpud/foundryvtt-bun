@@ -18,23 +18,13 @@ on:
         description: JSON array of platforms in the manifest
         required: true
         type: string
-      link-repository:
-        description: Annotate the manifest with this repository as its source
-        required: false
-        type: boolean
-        default: true
       sbom:
         description: >
           Attest a CycloneDX SBOM for each platform and upload it as an
-          sbom-<platform> artifact.  Leave false for images that must stay
-          private, since attestations are public.
+          sbom-<platform> artifact.
         required: false
         type: boolean
         default: false
-    secrets:
-      registry-token:
-        description: Token for pushing to GHCR. Defaults to GITHUB_TOKEN.
-        required: false
     outputs:
       tag-names:
         description: The tags applied, space-separated (e.g. "14.369.0 14.369 14")
@@ -129,14 +119,13 @@ jobs:
 
       - name: Log in to GHCR
         env:
-          REGISTRY_USER: ${{ secrets.registry-token && github.repository_owner || github.actor }}
-          REGISTRY_TOKEN: ${{ secrets.registry-token || secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: docker login ghcr.io --username "$REGISTRY_USER" --password-stdin <<< "$REGISTRY_TOKEN"
 
       - name: Create and push the manifest
         id: manifest
         env:
-          LINK: ${{ inputs.link-repository }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
           TAG_NAMES: ${{ steps.tags.outputs.names }}
         run: |
@@ -144,9 +133,7 @@ jobs:
           for tag in $TAG_NAMES; do
             args+=(--tag "${IMAGE_REPO}:${tag}")
           done
-          if [[ "$LINK" == "true" ]]; then
-            args+=(--annotation "index:org.opencontainers.image.source=${REPO_URL}")
-          fi
+          args+=(--annotation "index:org.opencontainers.image.source=${REPO_URL}")
           for dir in /tmp/digests/*/; do
             hex=$(find "$dir" -maxdepth 1 -type f -regextype posix-extended \
               -regex '.*/[a-f0-9]{64}' -printf '%f\n')
@@ -190,8 +177,8 @@ jobs:
       packages: write
     env:
       IMAGE_REPO: ghcr.io/${{ inputs.image-name }}
-      REGISTRY_USER: ${{ secrets.registry-token && github.repository_owner || github.actor }}
-      REGISTRY_TOKEN: ${{ secrets.registry-token || secrets.GITHUB_TOKEN }}
+      REGISTRY_USER: ${{ github.actor }}
+      REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1

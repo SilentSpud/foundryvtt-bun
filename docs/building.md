@@ -2,7 +2,7 @@
 
 Most users should pull a published tag as described in the
 [project README](../README.md). This guide is for contributors, and for the
-occasional case where you need a locally built or pre-installed image.
+occasional case where you need a locally built image.
 
 ## Building from source
 
@@ -30,10 +30,7 @@ bun run image                    # the image for your platform
 bun run image multiarch --push   # every published platform
 ```
 
-Arguments after `bun run image` are passed to `docker buildx bake`. For a
-pre-installed build from a clone, set `FOUNDRY_USERNAME` and
-`FOUNDRY_PASSWORD` (or `FOUNDRY_RELEASE_URL`) in the environment and run
-`bun run image preinstall`.
+Arguments after `bun run image` are passed to `docker buildx bake`.
 
 ## Cross-platform builds
 
@@ -59,55 +56,3 @@ own, use Docker's
      --output type=docker \
      --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 .
    ```
-
-## Pre-installed distribution builds
-
-A Foundry Virtual Tabletop distribution can be installed into the image at
-build time. The image is much larger, but it starts faster because nothing is
-downloaded at startup, and authentication happens at build time instead of run
-time.
-
-### Build with credentials
-
-> [!NOTE]
-> Credentials are only used to fetch a distribution; they are not stored in the
-> resulting image.
-
-```console
-docker build \
-  --build-arg CONTAINER_VERSION=14.369.0 \
-  --build-arg FOUNDRY_VERSION=14.369 \
-  --secret id=foundry_username,src=<(echo "<your_username>") \
-  --secret id=foundry_password,src=<(echo "<your_password>") \
-  --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
-  https://github.com/SilentSpud/foundryvtt-bun.git#main
-```
-
-> [!TIP]
-> If your credentials are stored in a JSON file, as described in the
-> [secrets](../README.md#secrets) reference, extract and pass them as build
-> secrets:
->
-> ```console
-> docker build \
->   --build-arg CONTAINER_VERSION=14.369.0 \
->   --build-arg FOUNDRY_VERSION=14.369 \
->   --secret id=foundry_username,src=<(jq -r '.foundry_username' path/to/credentials.json) \
->   --secret id=foundry_password,src=<(jq -r '.foundry_password' path/to/credentials.json) \
->   --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
->   https://github.com/SilentSpud/foundryvtt-bun.git#main
-> ```
-
-For more on build secrets, see the
-[Docker documentation](https://docs.docker.com/build/building/secrets/).
-
-### Build with a temporary URL
-
-```console
-docker build \
-  --build-arg CONTAINER_VERSION=14.369.0 \
-  --build-arg FOUNDRY_VERSION=14.369 \
-  --build-arg FOUNDRY_RELEASE_URL='<temporary_url>' \
-  --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
-  https://github.com/SilentSpud/foundryvtt-bun.git#main
-```

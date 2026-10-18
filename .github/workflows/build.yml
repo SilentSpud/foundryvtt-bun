@@ -129,27 +129,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     outputs:
-      preinstall: ${{ steps.check.outputs.preinstall }}
       dockerhub: ${{ steps.check.outputs.dockerhub }}
     steps:
       - name: Check optional secrets
         id: check
         env:
-          FOUNDRY_USERNAME: ${{ secrets.FOUNDRY_USERNAME }}
-          FOUNDRY_PASSWORD: ${{ secrets.FOUNDRY_PASSWORD }}
-          PRIVATE_PACKAGE_TOKEN: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          preinstall=false
-          if [[ -n "$FOUNDRY_USERNAME" && -n "$FOUNDRY_PASSWORD" && -n "$PRIVATE_PACKAGE_TOKEN" ]]; then
-            preinstall=true
-          fi
           dockerhub=false
           if [[ -n "$DOCKER_USERNAME" && -n "$DOCKER_PASSWORD" ]]; then
             dockerhub=true
           fi
-          echo "preinstall=${preinstall}" >> "$GITHUB_OUTPUT"
           echo "dockerhub=${dockerhub}" >> "$GITHUB_OUTPUT"
 
   build:
@@ -175,38 +166,6 @@ jobs:
       foundry-version: ${{ needs.config.outputs.foundry_version }}
       scan: true
 
-  build-preinstalled:
-    name: Build Container Pre-Installed
-    needs:
-      - config
-      - lint
-      - unit-test
-      - secret-check
-    # This image contains Foundry itself, so it is pushed with a personal
-    # token and never linked to the public repository.
-    if: |
-      needs.secret-check.outputs.preinstall == 'true' && (
-        github.event_name != 'pull_request' ||
-        github.event.pull_request.head.repo.full_name == github.repository)
-    uses: $/.github/workflows/_container-build.yml
-    # The called job declares security-events: write, so the caller must
-    # grant it even though this image is never scanned.
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-    with:
-      image-name: ${{ needs.config.outputs.image_name_preinstall }}
-      platforms: ${{ needs.config.outputs.test_platforms }}
-      target: preinstall
-      container-version: ${{ needs.config.outputs.container_version }}
-      foundry-version: ${{ needs.config.outputs.foundry_version }}
-      link-repository: false
-    secrets:
-      registry-token: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
-      foundry-username: ${{ secrets.FOUNDRY_USERNAME }}
-      foundry-password: ${{ secrets.FOUNDRY_PASSWORD }}
-
   test:
     name: Test Container
     needs:
@@ -224,22 +183,6 @@ jobs:
       foundry-username: ${{ secrets.FOUNDRY_USERNAME }}
       foundry-password: ${{ secrets.FOUNDRY_PASSWORD }}
 
-  test-preinstalled:
-    name: Test Container Pre-Installed
-    needs:
-      - config
-      - build-preinstalled
-    uses: $/.github/workflows/_container-test.yml
-    permissions:
-      actions: read
-      contents: read
-      packages: read
-    with:
-      image-name: ${{ needs.config.outputs.image_name_preinstall }}
-      platforms: ${{ needs.config.outputs.test_platforms }}
-    secrets:
-      registry-token: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
-
   ci-gate:
     name: CI Gate
     # The only check branch protection requires; keep the name stable so job
@@ -251,9 +194,7 @@ jobs:
       - scan
       - secret-check
       - build
-      - build-preinstalled
       - test
-      - test-preinstalled
     # Not `always()`, which also runs on cancellation and reports a spurious
     # failure; `!cancelled()` still runs after a dependency fails.
     if: ${{ !cancelled() }}
@@ -268,11 +209,9 @@ jobs:
           [[ "${{ needs['unit-test'].result }}" == success ]] || { echo "unit-test: ${{ needs['unit-test'].result }}"; exit 1; }
           [[ "${{ needs.scan.result }}"        == success ]] || { echo "scan: ${{ needs.scan.result }}";               exit 1; }
           [[ "${{ needs.secret-check.result }}"     == success ]] || { echo "secret-check: ${{ needs.secret-check.result }}";    exit 1; }
-          # Skipped on fork PRs, and the preinstall jobs also without their secrets:
-          [[ "${{ needs.build.result }}"              =~ ^(success|skipped)$ ]] || { echo "build: ${{ needs.build.result }}";                           exit 1; }
-          [[ "${{ needs['build-preinstalled'].result }}" =~ ^(success|skipped)$ ]] || { echo "build-preinstalled: ${{ needs['build-preinstalled'].result }}"; exit 1; }
-          [[ "${{ needs.test.result }}"               =~ ^(success|skipped)$ ]] || { echo "test: ${{ needs.test.result }}";                             exit 1; }
-          [[ "${{ needs['test-preinstalled'].result }}"  =~ ^(success|skipped)$ ]] || { echo "test-preinstalled: ${{ needs['test-preinstalled'].result }}";   exit 1; }
+          # Skipped on fork PRs:
+          [[ "${{ needs.build.result }}" =~ ^(success|skipped)$ ]] || { echo "build: ${{ needs.build.result }}"; exit 1; }
+          [[ "${{ needs.test.result }}"  =~ ^(success|skipped)$ ]] || { echo "test: ${{ needs.test.result }}";   exit 1; }
           echo "All required jobs passed."
 
   publish-manifest:
@@ -281,11 +220,6 @@ jobs:
       - config
       - build
       - test
-      - test-preinstalled
-    # A skipped preinstall run must not block the standard image.
-    if: |
-      !cancelled() && needs.build.result == 'success' && needs.test.result == 'success' &&
-      contains(fromJSON('["success", "skipped"]'), needs.test-preinstalled.result)
     uses: $/.github/workflows/_container-publish.yml
     permissions:
       actions: read
@@ -297,27 +231,6 @@ jobs:
       image-name: ${{ needs.config.outputs.image_name }}
       platforms: ${{ needs.config.outputs.platforms }}
       sbom: true
-
-  publish-manifest-preinstalled:
-    name: Publish Manifest Pre-Installed
-    needs:
-      - config
-      - build-preinstalled
-      - test
-      - test-preinstalled
-    uses: $/.github/workflows/_container-publish.yml
-    permissions:
-      actions: read
-      attestations: write
-      contents: read
-      id-token: write
-      packages: write
-    with:
-      image-name: ${{ needs.config.outputs.image_name_preinstall }}
-      platforms: ${{ needs.config.outputs.test_platforms }}
-      link-repository: false
-    secrets:
-      registry-token: ${{ secrets.PRIVATE_PACKAGE_TOKEN }}
 
   release-sbom:
     name: Attach SBOMs to the release

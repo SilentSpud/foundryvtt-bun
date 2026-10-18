@@ -6,7 +6,6 @@
  * and flags work as usual:
  *
  *   bun run image                      # the "image" target (default group)
- *   bun run image preinstall           # with a Foundry release installed
  *   bun run image multiarch --push     # every published platform
  */
 

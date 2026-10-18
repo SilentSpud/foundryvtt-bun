@@ -28,10 +28,6 @@ on:
         type: number
         default: 7
     secrets:
-      registry-token:
-        description: >
-          Token for pulling from the registry. Defaults to GITHUB_TOKEN.
-        required: false
       foundry-username:
         description: foundryvtt.com username for the real-release test
         required: false
@@ -60,8 +56,8 @@ jobs:
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # tag=v4.6.0
         with:
           registry: ${{ inputs.registry }}
-          username: ${{ secrets.registry-token && github.repository_owner || github.actor }}
-          password: ${{ secrets.registry-token || secrets.GITHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # gh run download --name accepts exact artifact names, which keeps
       # sibling images with a shared slug prefix from matching.

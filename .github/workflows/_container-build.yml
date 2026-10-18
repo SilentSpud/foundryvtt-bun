@@ -29,32 +29,13 @@ on:
         description: The Foundry version (generation.build)
         required: true
         type: string
-      link-repository:
-        description: >
-          Label the image with this repository as its source.  Leave false for
-          images that must stay private, since the label links the package.
-        required: false
-        type: boolean
-        default: true
       scan:
         description: >
           Scan the pushed image with Trivy, failing on HIGH or CRITICAL
-          vulnerabilities or copyleft licenses in its npm packages.  Leave
-          false for images that must stay private, since the results go to
-          code scanning.
+          vulnerabilities or copyleft licenses in its npm packages.
         required: false
         type: boolean
         default: false
-    secrets:
-      registry-token:
-        description: Token for pushing to GHCR. Defaults to GITHUB_TOKEN.
-        required: false
-      foundry-username:
-        description: foundryvtt.com username, for the preinstall target
-        required: false
-      foundry-password:
-        description: foundryvtt.com password, for the preinstall target
-        required: false
 
 # errtrace, nounset, errexit, and pipefail; -x echoes each command.
 defaults:
@@ -75,8 +56,8 @@ jobs:
       security-events: write
     env:
       IMAGE_REPO: ghcr.io/${{ inputs.image-name }}
-      REGISTRY_USER: ${{ secrets.registry-token && github.repository_owner || github.actor }}
-      REGISTRY_TOKEN: ${{ secrets.registry-token || secrets.GITHUB_TOKEN }}
+      REGISTRY_USER: ${{ github.actor }}
+      REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
@@ -104,9 +85,6 @@ jobs:
         env:
           CONTAINER_VERSION: ${{ inputs.container-version }}
           FOUNDRY_VERSION: ${{ inputs.foundry-version }}
-          FOUNDRY_USERNAME: ${{ secrets.foundry-username }}
-          FOUNDRY_PASSWORD: ${{ secrets.foundry-password }}
-          LINK: ${{ inputs.link-repository }}
           PLATFORM: ${{ matrix.platform }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
           TARGET: ${{ inputs.target }}
@@ -121,10 +99,8 @@ jobs:
             --set "${TARGET}.cache-to=type=registry,ref=${CACHE_REF},mode=max"
             --set "${TARGET}.labels.org.opencontainers.image.revision=${GITHUB_SHA}"
             --set "${TARGET}.labels.org.opencontainers.image.version=${CONTAINER_VERSION}"
+            --set "${TARGET}.labels.org.opencontainers.image.source=${REPO_URL}"
           )
-          if [[ "$LINK" == "true" ]]; then
-            sets+=(--set "${TARGET}.labels.org.opencontainers.image.source=${REPO_URL}")
-          fi
           docker buildx bake "$TARGET" "${sets[@]}" \
             --provenance=false --sbom=false --metadata-file /tmp/bake.json
           digest=$(jq -r --arg t "$TARGET" '.[$t]["containerimage.digest"]' /tmp/bake.json)

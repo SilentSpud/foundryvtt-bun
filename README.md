@@ -279,8 +279,8 @@ container runs as. Set `XDG_DATA_HOME` to change the location.
 ## Building
 
 Most users should pull a published image. If you want to build the image
-yourself (from source, for another architecture, or with a distribution
-pre-installed), see the [building guide](docs/building.md).
+yourself (from source or for another architecture), see the
+[building guide](docs/building.md).
 
 ## Contributing
 

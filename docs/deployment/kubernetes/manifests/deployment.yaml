@@ -92,8 +92,7 @@ spec:
               mountPath: /run/secrets
               readOnly: true
             # Writable paths for a read-only root.  resources/ is reinstalled
-            # from the cache zip each start; drop its mount for a pre-installed
-            # image, or it hides the baked-in application.
+            # from the cache zip each start.
             - name: resources
               mountPath: /home/node/resources
             - name: tmp

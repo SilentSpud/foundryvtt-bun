@@ -31,7 +31,6 @@ RUN bun run build
 FROM ${BUN_IMAGE} AS final-stage
 
 ARG CONTAINER_VERSION
-ARG FOUNDRY_RELEASE_URL
 ARG FOUNDRY_VERSION
 
 RUN test -n "${CONTAINER_VERSION}" || { echo "ERROR: CONTAINER_VERSION must be passed as --build-arg"; exit 1; } ; \
@@ -76,36 +75,12 @@ ENV FOUNDRY_VERSION=${FOUNDRY_VERSION}
 ENV HOME=/home/node
 WORKDIR $HOME
 
-# Optional pre-installed release, only when credentials or FOUNDRY_RELEASE_URL
-# are given.  The scripts it needs come first so unrelated code changes do not
-# repeat the download, and the archive and cookies never outlive this RUN.
 COPY --from=build-stage \
   /root/dist/authenticate.js \
-  /root/dist/get_release_url.js \
-  ./
-RUN \
-  --mount=type=secret,id=foundry_username,required=false \
-  --mount=type=secret,id=foundry_password,required=false \
-  --mount=type=tmpfs,target=/run/release \
-  if [ -f /run/secrets/foundry_username ] && [ -f /run/secrets/foundry_password ]; then \
-  ./authenticate.js "$(cat /run/secrets/foundry_username)" "$(cat /run/secrets/foundry_password)" /run/release/cookiejar.json && \
-  DOWNLOAD_URL=$(./get_release_url.js --retry 5 /run/release/cookiejar.json "${FOUNDRY_VERSION}"); \
-  elif [ -n "${FOUNDRY_RELEASE_URL}" ]; then \
-  DOWNLOAD_URL="${FOUNDRY_RELEASE_URL}"; \
-  else \
-  echo "No valid credentials or pre-signed URL provided. Skipping pre-installation."; \
-  fi && \
-  if [ -n "${DOWNLOAD_URL}" ]; then \
-  curl --fail --location --proto '=https' --proto-redir '=https' \
-    --output /run/release/foundryvtt.zip "${DOWNLOAD_URL}" && \
-  mkdir -p resources/app && \
-  unzip -q -d resources/app /run/release/foundryvtt.zip; \
-  fi
-
-COPY --from=build-stage \
   /root/dist/check_health.js \
   /root/dist/entrypoint.js \
   /root/dist/get_license.js \
+  /root/dist/get_release_url.js \
   ./
 # Log helpers for user patch scripts (CONTAINER_PATCHES, CONTAINER_PATCH_URLS).
 COPY src/logging.sh ./

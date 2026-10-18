@@ -24,10 +24,6 @@ variable "IMAGE" {
   default = "ghcr.io/silentspud/foundryvtt-bun"
 }
 
-variable "FOUNDRY_RELEASE_URL" {
-  default = ""
-}
-
 group "default" {
   targets = ["image"]
 }
@@ -51,17 +47,4 @@ target "multiarch" {
   inherits  = ["_common"]
   tags      = ["${IMAGE}:${CONTAINER_VERSION}"]
   platforms = ["linux/amd64", "linux/arm64"]
-}
-
-target "preinstall" {
-  inherits = ["_common"]
-  tags     = ["${IMAGE}-preinstall:${CONTAINER_VERSION}"]
-  args = {
-    FOUNDRY_RELEASE_URL = FOUNDRY_RELEASE_URL
-  }
-  secret = [
-    "id=foundry_username,env=FOUNDRY_USERNAME",
-    "id=foundry_password,env=FOUNDRY_PASSWORD",
-  ]
-  output = ["type=docker"]
 }
