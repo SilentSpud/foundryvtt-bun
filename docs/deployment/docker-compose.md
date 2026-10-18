@@ -6,8 +6,8 @@ storage, and ports, so you can start, stop, or rebuild the server with one
 command.
 
 This guide covers a complete single-host deployment. For the full catalog of
-settings, see the [environment variables] and [secrets] sections of the project
-README.
+settings, see the [environment variables] reference and the [secrets] section
+of the project README.
 
 ## Prerequisites
 
@@ -171,7 +171,7 @@ version, change the tag in `compose.yaml` first, then pull.
 [Docker Compose]: https://docs.docker.com/compose/
 [Docker Engine]: https://docs.docker.com/get-docker/
 [Rancher Desktop]: https://rancherdesktop.io/
-[environment variables]: ../../README.md#environment-variables
+[environment variables]: ../environment-variables.md
 [foundryvtt.com]: https://foundryvtt.com/auth/register/
 [secrets]: ../../README.md#secrets
 [variable substitution]: https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/
