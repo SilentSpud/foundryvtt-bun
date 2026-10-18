@@ -36,6 +36,15 @@ on:
         required: false
         type: boolean
         default: true
+      scan:
+        description: >
+          Scan the pushed image with Trivy, failing on HIGH or CRITICAL
+          vulnerabilities or copyleft licenses in its npm packages.  Leave
+          false for images that must stay private, since the results go to
+          code scanning.
+        required: false
+        type: boolean
+        default: false
     secrets:
       registry-token:
         description: Token for pushing to GHCR. Defaults to GITHUB_TOKEN.
@@ -63,6 +72,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write
     env:
       IMAGE_REPO: ghcr.io/${{ inputs.image-name }}
       REGISTRY_USER: ${{ secrets.registry-token && github.repository_owner || github.actor }}
@@ -133,3 +143,36 @@ jobs:
           name: digests-${{ steps.slugs.outputs.image }}-${{ steps.slugs.outputs.platform }}
           path: /tmp/digests/*
           retention-days: 1
+
+      - name: Scan with Trivy
+        if: inputs.scan
+        env:
+          REF: ${{ env.IMAGE_REPO }}@${{ steps.build.outputs.digest }}
+          TRIVY_USERNAME: ${{ env.REGISTRY_USER }}
+          TRIVY_PASSWORD: ${{ env.REGISTRY_TOKEN }}
+        run: |
+          .github/scripts/trivy.sh image --scanners vuln \
+            --format sarif --output trivy-image.sarif "$REF"
+
+      # Code scanning rejects SARIF not tied to a branch or PR.
+      - name: Upload results to code scanning
+        if: |
+          inputs.scan && (
+            github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
+            startsWith(github.ref, 'refs/heads/'))
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # tag=v4.39.0
+        with:
+          category: trivy-image-${{ steps.slugs.outputs.platform }}
+          sarif_file: trivy-image.sarif
+
+      # Debian findings are advisory: the daily rebuild picks up their fixes,
+      # and Trivy rates every GPL package license HIGH.
+      - name: Fail on npm package vulnerabilities or copyleft licenses
+        if: inputs.scan
+        env:
+          REF: ${{ env.IMAGE_REPO }}@${{ steps.build.outputs.digest }}
+          TRIVY_USERNAME: ${{ env.REGISTRY_USER }}
+          TRIVY_PASSWORD: ${{ env.REGISTRY_TOKEN }}
+        run: |
+          .github/scripts/trivy.sh image --skip-db-update --scanners vuln,license \
+            --pkg-types library --severity HIGH,CRITICAL --exit-code 1 "$REF"

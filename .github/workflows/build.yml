@@ -166,12 +166,14 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write
     with:
       image-name: ${{ needs.config.outputs.image_name }}
       platforms: ${{ needs.config.outputs.platforms }}
       target: image
       container-version: ${{ needs.config.outputs.container_version }}
       foundry-version: ${{ needs.config.outputs.foundry_version }}
+      scan: true
 
   build-preinstalled:
     name: Build Container Pre-Installed
@@ -187,9 +189,12 @@ jobs:
         github.event_name != 'pull_request' ||
         github.event.pull_request.head.repo.full_name == github.repository)
     uses: $/.github/workflows/_container-build.yml
+    # The called job declares security-events: write, so the caller must
+    # grant it even though this image is never scanned.
     permissions:
       contents: read
       packages: write
+      security-events: write
     with:
       image-name: ${{ needs.config.outputs.image_name_preinstall }}
       platforms: ${{ needs.config.outputs.test_platforms }}
