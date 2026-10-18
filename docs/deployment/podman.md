@@ -94,9 +94,8 @@ The in-application "Update Software" tab is disabled in this image. For
 containers started with `podman run` or Compose, pull a fresh image and
 recreate the container. Quadlet units can keep themselves current: add
 `AutoUpdate=registry` to the `[Container]` section and the
-`podman-auto-update.timer` will re-pull the `:14` tag and
-restart the service whenever a new image is published. To update on demand
-instead, run:
+`podman-auto-update.timer` will re-pull the `:14` tag and restart the service
+whenever a new image is published. To update on demand instead, run:
 
 ```console
 podman auto-update

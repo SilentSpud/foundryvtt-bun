@@ -9,11 +9,10 @@ reference to work on a specific container runtime, plus a few worked examples
 ("recipes") for common networking setups.
 
 > [!NOTE]
-> Every example pins the image to the major version tag `:14`,
-> matching the recommendation in the
-> [Image tags](../../README.md#image-tags) section of the README. This keeps
-> you on the newest release compatible with your data while preventing
-> surprise major-version upgrades.
+> Every example pins the image to the major version tag `:14`, matching the
+> recommendation in the [Image tags](../../README.md#image-tags) section of the
+> README. This keeps you on the newest release compatible with your data while
+> preventing surprise major-version upgrades.
 
 ## Choose a runtime
 

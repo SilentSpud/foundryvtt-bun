@@ -218,9 +218,9 @@ patches:
 
 > [!NOTE]
 > Different instances can run different Foundry versions. Pin each overlay's
-> image tag — for example `:14.369` for an exact minor release —
-> and set the `FOUNDRY_VERSION` environment variable to match the version you
-> want installed.
+> image tag — for example `:14.369` for an exact minor release — and set the
+> `FOUNDRY_VERSION` environment variable to match the version you want
+> installed.
 
 ## Share the download cache
 
@@ -425,8 +425,8 @@ spec:
 ## Updating
 
 The in-application "Update Software" tab is disabled in this image. The
-Deployment pins the `:14` tag with `imagePullPolicy: Always`,
-so a rollout re-pulls the newest matching image:
+Deployment pins the `:14` tag with `imagePullPolicy: Always`, so a rollout
+re-pulls the newest matching image:
 
 ```console
 kubectl --namespace foundryvtt rollout restart deployment/foundryvtt

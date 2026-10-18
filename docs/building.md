@@ -7,7 +7,7 @@ rare case where a locally built or pre-loaded image is useful.
 ## Building from source
 
 Build the image using this git repository as the
-[build context](https://docs.docker.com/engine/reference/commandline/build/#git-repositories):
+[build context](https://docs.docker.com/build/concepts/context/#git-repositories):
 
 ```console
 docker build \
@@ -37,11 +37,10 @@ pre-installed build from a clone, set `FOUNDRY_USERNAME` and
 
 ## Cross-platform builds
 
-The image supports the `linux/amd64` and `linux/arm64` platforms, the
-architectures for which [Bun](https://bun.sh), which runs Foundry and the
-container's utilities, is published. To build for a platform other than your own, use
-Docker's [`buildx`](https://docs.docker.com/buildx/working-with-buildx/)
-feature:
+The image supports `linux/amd64` and `linux/arm64`, the platforms
+[Bun](https://bun.sh) is published for. To build for a platform other than your
+own, use Docker's
+[multi-platform builds](https://docs.docker.com/build/building/multi-platform/):
 
 1. Clone the project:
 

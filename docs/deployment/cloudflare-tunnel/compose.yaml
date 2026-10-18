@@ -9,9 +9,7 @@ services:
       - FOUNDRY_PROXY_SSL=true
       - FOUNDRY_TELEMETRY=true
     volumes:
-      - type: bind
-        source: ./volumes/foundry_data
-        target: /data
+      - "./volumes/foundry_data:/data"
     secrets:
       - source: foundry_secrets
         target: config.json
@@ -23,9 +21,7 @@ services:
     depends_on:
       - foundry
     volumes:
-      - type: bind
-        source: ./volumes/cloudflare_config
-        target: /etc/cloudflared
+      - "./volumes/cloudflare_config:/etc/cloudflared"
     restart: unless-stopped
 
 secrets:

@@ -38,13 +38,9 @@ README.
          - FOUNDRY_ADMIN_KEY=<your_admin_key>
          - FOUNDRY_TELEMETRY=true
        volumes:
-         - type: bind
-           source: ./data
-           target: /data
+         - "./data:/data"
        ports:
-         - target: 30000
-           published: 30000
-           protocol: tcp
+         - "30000:30000/tcp"
        restart: unless-stopped
    ```
 
@@ -101,13 +97,9 @@ reach the container.
          - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY:-}
          - FOUNDRY_TELEMETRY=true
        volumes:
-         - type: bind
-           source: ./data
-           target: /data
+         - "./data:/data"
        ports:
-         - target: 30000
-           published: 30000
-           protocol: tcp
+         - "30000:30000/tcp"
        restart: unless-stopped
    ```
 
@@ -144,13 +136,9 @@ inside the container. See the [secrets] reference for every supported key.
        environment:
          - FOUNDRY_TELEMETRY=true
        volumes:
-         - type: bind
-           source: ./data
-           target: /data
+         - "./data:/data"
        ports:
-         - target: 30000
-           published: 30000
-           protocol: tcp
+         - "30000:30000/tcp"
        secrets:
          - source: config_json
            target: config.json
@@ -167,9 +155,9 @@ docker compose pull
 docker compose up --detach
 ```
 
-Because the image is pinned to the major tag `:14`, `pull`
-fetches the newest release that is compatible with your existing data. To move
-to a new major version, change the tag in `compose.yaml` first, then pull.
+Because the image is pinned to the major tag `:14`, `pull` fetches the newest
+release that is compatible with your existing data. To move to a new major
+version, change the tag in `compose.yaml` first, then pull.
 
 ## Next steps
 
