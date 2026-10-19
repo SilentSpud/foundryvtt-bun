@@ -113,6 +113,10 @@ commands for your runtime.
 The images of this container are tagged with [semantic
 versions](https://semver.org) that align with the [version and build of Foundry
 Virtual Tabletop](https://foundryvtt.com/article/versioning/) that they support.
+The major and minor numbers always match the Foundry release: `14.369` runs
+Foundry version 14, build 369. Patch numbers mark fixes to this image for that
+same Foundry release, so `14.369.0` and `14.369.1` run the same build of
+Foundry.
 
 > [!TIP]
 > Use the major version tag, `:14`. It ensures that you receive the most recent
