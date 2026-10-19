@@ -98,6 +98,30 @@ describe("FoundrySession", () => {
         expect(session.username).toBe("mixedcase");
     });
 
+    test("the username cookie stays off the site's domain", async () => {
+        const session = await loggedIn();
+        const sent = session.jar.getCookiesSync(baseUrl).map((c) => c.key);
+        expect(sent).not.toContain("username");
+    });
+
+    test("the cookie domain comes from CONTAINER_COOKIE_DOMAIN", async () => {
+        const previous = process.env.CONTAINER_COOKIE_DOMAIN;
+        process.env.CONTAINER_COOKIE_DOMAIN = "example.test";
+        try {
+            const session = await loggedIn();
+            expect(session.cookieDomain).toBe("example.test");
+            expect(
+                session.jar.getCookiesSync("http://example.test")[0]?.value,
+            ).toBe("mixedcase");
+        } finally {
+            if (previous === undefined) {
+                delete process.env.CONTAINER_COOKIE_DOMAIN;
+            } else {
+                process.env.CONTAINER_COOKIE_DOMAIN = previous;
+            }
+        }
+    });
+
     test("bad credentials are rejected", async () => {
         const session = new FoundrySession({ baseUrl });
         await expect(

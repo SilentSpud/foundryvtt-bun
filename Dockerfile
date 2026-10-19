@@ -37,8 +37,8 @@ RUN test -n "${CONTAINER_VERSION}" || { echo "ERROR: CONTAINER_VERSION must be p
     test -n "${FOUNDRY_VERSION}" || { echo "ERROR: FOUNDRY_VERSION must be passed as --build-arg"; exit 1; }
 
 LABEL com.foundryvtt.version=${FOUNDRY_VERSION}
-LABEL org.opencontainers.image.authors="markf+github@geekpad.com"
-LABEL org.opencontainers.image.vendor="Geekpad"
+LABEL org.opencontainers.image.authors="1478389+SilentSpud@users.noreply.github.com"
+LABEL org.opencontainers.image.vendor="SilentSpud"
 
 # The upstream rootfs lacks <suite>-security fixes until a point release, so
 # apply them in the same layer as the packages.  The entrypoint extracts

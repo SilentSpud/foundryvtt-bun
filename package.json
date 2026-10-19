@@ -13,7 +13,10 @@
     "url": "https://github.com/SilentSpud/foundryvtt-bun/issues"
   },
   "license": "MIT",
-  "author": "Mark Feldhousen <markf+github@geekpad.com>",
+  "author": "Silent Spud <1478389+SilentSpud@users.noreply.github.com>",
+  "contributors": [
+    "Mark Feldhousen <markf+github@geekpad.com>"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SilentSpud/foundryvtt-bun.git"

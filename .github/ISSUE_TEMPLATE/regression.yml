@@ -74,7 +74,7 @@ body:
       render: shell
       placeholder: |
         com.foundryvtt.version = "x.y"
-        org.opencontainers.image.authors = "markf+github@geekpad.com"
+        org.opencontainers.image.authors = "1478389+SilentSpud@users.noreply.github.com"
         org.opencontainers.image.created = "2022-09-01T23:22:04.337Z"
         org.opencontainers.image.description = "An easy-to-deploy containerized Foundry Virtual Tabletop server."
         org.opencontainers.image.licenses = "MIT"
@@ -82,7 +82,7 @@ body:
         org.opencontainers.image.source = "https://github.com/SilentSpud/foundryvtt-bun"
         org.opencontainers.image.title = "foundryvtt-bun"
         org.opencontainers.image.url = "https://github.com/SilentSpud/foundryvtt-bun"
-        org.opencontainers.image.vendor = "Geekpad"
+        org.opencontainers.image.vendor = "SilentSpud"
         org.opencontainers.image.version = "x.y.z"
     validations:
       required: true

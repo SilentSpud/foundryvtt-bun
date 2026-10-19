@@ -12,8 +12,12 @@ import { type Logger, silentLogger } from "./logging.ts";
 import { sleep } from "./util.ts";
 
 export const BASE_URL = "https://foundryvtt.com";
-/** Cookie domain used to hand the resolved username between utilities. */
-export const LOCAL_DOMAIN = "felddy.com";
+/**
+ * Cookie domain used to hand the resolved username between utilities.  It
+ * must not be foundryvtt.com: the cookie would then share the site's cookies
+ * and be sent along with every request to it.
+ */
+export const DEFAULT_COOKIE_DOMAIN = "foundry.invalid";
 export const DEFAULT_USER_AGENT = `Bun/${Bun.version}`;
 const INITIAL_RETRY_DELAY_S = 120;
 // One path segment: the name is reused in a cookie and in the licenses URL.
@@ -24,6 +28,8 @@ export interface SessionOptions {
     userAgent?: string;
     /** Site root.  Overridable for tests. */
     baseUrl?: string;
+    /** Defaults to CONTAINER_COOKIE_DOMAIN, then DEFAULT_COOKIE_DOMAIN. */
+    cookieDomain?: string;
 }
 
 /** Attribute values of every element matching `selector`, in order. */
@@ -49,6 +55,7 @@ export function selectAttributes(
 export class FoundrySession {
     readonly jar: CookieJar;
     readonly baseUrl: string;
+    readonly cookieDomain: string;
     readonly logger: Logger;
     private readonly headers: Record<string, string>;
     private readonly fetch: typeof fetch;
@@ -56,6 +63,10 @@ export class FoundrySession {
     constructor(options: SessionOptions = {}, jar = new CookieJar()) {
         this.jar = jar;
         this.baseUrl = options.baseUrl ?? BASE_URL;
+        this.cookieDomain =
+            options.cookieDomain ||
+            process.env.CONTAINER_COOKIE_DOMAIN ||
+            DEFAULT_COOKIE_DOMAIN;
         this.logger = options.logger ?? silentLogger;
         this.headers = {
             DNT: "1",
@@ -80,10 +91,10 @@ export class FoundrySession {
 
     /** Account username resolved at login (never the e-mail address). */
     get username(): string | undefined {
-        const cookies = this.jar.getCookiesSync(`http://${LOCAL_DOMAIN}`);
+        const cookies = this.jar.getCookiesSync(`http://${this.cookieDomain}`);
         if (cookies.length > 1) {
             throw new Error(
-                `Wrong number of cookies found for ${LOCAL_DOMAIN}.  Expected 1, found ${cookies.length}`,
+                `Wrong number of cookies found for ${this.cookieDomain}.  Expected 1, found ${cookies.length}`,
             );
         }
         return cookies[0]?.value;
@@ -91,9 +102,12 @@ export class FoundrySession {
 
     private set username(value: string) {
         const cookie = Cookie.parse(
-            `username=${value}; Domain=${LOCAL_DOMAIN}; Path=/`,
+            `username=${value}; Domain=${this.cookieDomain}; Path=/`,
         );
-        this.jar.setCookieSync(cookie!.toString(), `http://${LOCAL_DOMAIN}`);
+        this.jar.setCookieSync(
+            cookie!.toString(),
+            `http://${this.cookieDomain}`,
+        );
     }
 
     private async request(
@@ -180,7 +194,7 @@ export class FoundrySession {
         const username = this.username;
         if (!username) {
             throw new Error(
-                `No username cookie found for ${LOCAL_DOMAIN}.  Log in first.`,
+                `No username cookie found for ${this.cookieDomain}.  Log in first.`,
             );
         }
         this.logger.info("Fetching licenses.");

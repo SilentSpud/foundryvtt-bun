@@ -19,7 +19,7 @@ comment to it instead.
 If you choose to [submit a pull
 request](https://github.com/SilentSpud/foundryvtt-bun/pulls), you will
 notice that CI runs a set of linters and syntax checkers. If your pull request
-fails them, that's OK. You can leave it there and we'll make the fixes.
+fails them, that's OK. You can leave it there and I'll make the fixes.
 
 To fix them yourself, or if you plan to contribute regularly, set up the
 development environment below. Its pre-commit hook runs the CI lint checks

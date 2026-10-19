@@ -245,6 +245,10 @@ details.
 
 This project is released as open source under the [MIT license](LICENSE).
 
+It is a fork of [felddy/foundryvtt-docker](https://github.com/felddy/foundryvtt-docker),
+created by Mark Feldhousen, and is now maintained independently by
+[@SilentSpud](https://github.com/SilentSpud).
+
 All contributions to this project will be released under the same MIT license.
 By submitting a pull request, you are agreeing to comply with this waiver of
 copyright interest.
