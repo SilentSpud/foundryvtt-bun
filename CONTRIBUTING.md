@@ -64,15 +64,15 @@ Once the version bump from `bun run release <x.y.z>` is on `main`, tag that
 commit:
 
 ```console
-git tag v14.369.0
-git push origin v14.369.0
+git tag v14.370.0
+git push origin v14.370.0
 ```
 
 The build workflow checks that the tag matches `package.json`, publishes the
 images, attaches an SBOM for each platform to a draft release with generated
 notes, and then publishes the release. Release assets are attached while the
 release is still a draft, so this works with immutable releases. A version
-with a suffix (for example `14.369.0-rc.1`) becomes a prerelease and is not
+with a suffix (for example `14.370.0-rc.1`) becomes a prerelease and is not
 mirrored to Docker Hub.
 
 ## License

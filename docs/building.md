@@ -11,9 +11,9 @@ Build the image using this git repository as the
 
 ```console
 docker build \
-  --build-arg CONTAINER_VERSION=14.369.0 \
-  --build-arg FOUNDRY_VERSION=14.369 \
-  --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 \
+  --build-arg CONTAINER_VERSION=14.370.0 \
+  --build-arg FOUNDRY_VERSION=14.370 \
+  --tag ghcr.io/silentspud/foundryvtt-bun:14.370.0 \
   https://github.com/SilentSpud/foundryvtt-bun.git#main
 ```
 
@@ -51,8 +51,8 @@ own, use Docker's
    ```console
    docker buildx build \
      --platform linux/amd64 \
-     --build-arg CONTAINER_VERSION=14.369.0 \
-     --build-arg FOUNDRY_VERSION=14.369 \
+     --build-arg CONTAINER_VERSION=14.370.0 \
+     --build-arg FOUNDRY_VERSION=14.370 \
      --output type=docker \
-     --tag ghcr.io/silentspud/foundryvtt-bun:14.369.0 .
+     --tag ghcr.io/silentspud/foundryvtt-bun:14.370.0 .
    ```
