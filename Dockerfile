@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG BUN_IMAGE=oven/bun:1.4.3-slim
+ARG BUN_IMAGE=oven/bun:1.4.4-slim
 # Must match the Debian release BUN_IMAGE is built on.
 ARG DEBIAN_SUITE=trixie
 

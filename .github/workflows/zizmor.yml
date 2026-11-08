@@ -31,10 +31,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Run zizmor
-        uses: zizmorcore/zizmor-action@85b2b9fb8e3325e7a23d7d0a9d7ba5ae0f999e3e # tag=v0.7.1
+        uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # tag=v0.8.1
         with:
           # Fork PRs cannot upload SARIF, so they fail on findings instead.
           advanced-security: >-
             ${{ github.event_name != 'pull_request' ||
               github.event.pull_request.head.repo.full_name == github.repository }}
-          version: 1.31.1
+          version: 1.32.0

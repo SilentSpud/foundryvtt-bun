@@ -136,7 +136,7 @@ jobs:
           inputs.scan && (
             github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
             startsWith(github.ref, 'refs/heads/'))
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # tag=v4.39.0
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # tag=v4.39.3
         with:
           category: trivy-image-${{ steps.slugs.outputs.platform }}
           sarif_file: trivy-image.sarif
