@@ -34,6 +34,9 @@ jobs:
           if awk '/^diff --git /{f=($3=="a/package.json")}
                   f && /^[-+]  "version":/{found=1}
                   END{exit !found}' <<< "$diff"; then
+            # Unlike the labeler, gh pr edit fails on a missing label.
+            gh label create "version bump :bookmark:" --repo "$GITHUB_REPOSITORY" \
+              --color 1d76db --description "Changes the project version" 2> /dev/null || true
             gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" \
               --add-label "version bump :bookmark:"
           fi
